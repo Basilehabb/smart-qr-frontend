@@ -10,8 +10,8 @@ export default function AdminLogin() {
 
   const login = async () => {
     try {
-      const res = await api.post("/admin/auth/login", { email, password });
-      localStorage.setItem("adminToken", res.data.token);
+      const res = await api.post("/auth/login", { email, password });
+      localStorage.setItem("token", res.data.token);
       router.push("/admin/dashboard");
     } catch {
       alert("Invalid admin credentials");

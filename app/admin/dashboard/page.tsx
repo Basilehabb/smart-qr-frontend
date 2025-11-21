@@ -62,11 +62,9 @@ export default function AdminDashboardPage() {
     try {
       setCreatingQR(true);
       const token = localStorage.getItem("token");
-      const res = await api.post(
-        "/qr/create",
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post("/qr/create", {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       const qrCodeValue = res.data.qr.code;
       setQrCode(qrCodeValue);
@@ -135,7 +133,7 @@ export default function AdminDashboardPage() {
                     target="_blank"
                     className="text-blue-500 underline"
                   >
-                    http://localhost:3000/qr/{qrCode}
+                  http://localhost:3000/qr/${qrCode}
                   </a>
                 </p>
               </div>
