@@ -4,9 +4,10 @@ import React from "react";
 type Props = { params: { code: string } };
 
 async function fetchQr(code: string) {
-  const res = await fetch(`http://localhost:4000/api/qr/${code}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${code}`, {
     cache: "no-store",
   });
+
   if (!res.ok) throw new Error("QR not found");
   return res.json();
 }
