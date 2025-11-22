@@ -21,6 +21,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-qr-code": "^2.0.18",
+    "react-qr-scanner": "^1.0.0-alpha.11",
     "react-qrcode-scanner": "^1.2.4",
     "tailwind-merge": "^3.4.0"
   },

@@ -4,8 +4,8 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
 
-// ✅ تحميل الكومبوننت بدون SSR
-const QrScanner = dynamic(() => import("react-qrcode-scanner"), { ssr: false });
+// تحميل الكومبوننت بدون SSR
+const QrReader = dynamic(() => import("react-qr-scanner"), { ssr: false });
 
 export default function ScanPage() {
   const [result, setResult] = useState<string | null>(null);
@@ -15,6 +15,7 @@ export default function ScanPage() {
   const handleScan = async (data: string | null) => {
     if (data && data !== result) {
       setResult(data);
+
       try {
         const res = await api.get(`/qr/${data}`);
         setUserData(res.data.user);
@@ -36,9 +37,10 @@ export default function ScanPage() {
       <h1 className="text-2xl font-bold mb-4">Scan QR Code</h1>
 
       <div className="w-72 h-72 border-4 border-blue-600 rounded-xl overflow-hidden mb-4">
-        <QrScanner
-          onDecode={handleScan}
+        <QrReader
+          delay={300}
           onError={handleError}
+          onScan={handleScan}
           style={{ width: "100%", height: "100%" }}
         />
       </div>
