@@ -1,75 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import { Html5QrcodeScanner } from "html5-qrcode";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-
-// تحميل الكومبوننت بدون SSR
-const QrReader = dynamic(() => import("react-qr-scanner"), { ssr: false });
 
 export default function ScanPage() {
   const [result, setResult] = useState<string | null>(null);
   const [userData, setUserData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const extractCode = (data: string) => {
-    try {
-      if (!data.includes("http")) return data.trim();
-      return data.split("/").pop()!.trim();
-    } catch {
-      return data;
-    }
-  };
+  useEffect(() => {
+    // لازم 3 arguments: id, config, verbose
+    const scanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: 250,
+      },
+      false // 👈 verbose mode OFF
+    );
 
-  const handleScan = async (data: string | null) => {
-    if (!data || data === result) return;
+    scanner.render(
+      async (decodedText) => {
+        setResult(decodedText);
 
-    const code = extractCode(data);
-    setResult(code);
+        try {
+          const res = await api.get(`/qr/${decodedText}`);
+          setUserData(res.data.user || null);
+        } catch {
+          setUserData(null);
+        }
+      },
+      () => {}
+    );
 
-    try {
-      const res = await api.get(`/qr/${code}`);
-      setUserData(res.data.user || null);
-      setError(null);
-    } catch (err) {
-      setUserData(null);
-      setError("No user found for this QR code");
-    }
-  };
-
-  const handleError = (err: any) => {
-    console.error(err);
-    setError("Camera access error");
-  };
+    return () => {
+      scanner.clear().catch(() => {});
+    };
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-      <h1 className="text-2xl font-bold mb-4">Scan QR Code</h1>
+    <div className="p-6 min-h-screen">
+      <h1 className="text-2xl font-bold mb-4">Scan QR</h1>
 
-      <div className="w-72 h-72 border-4 border-blue-600 rounded-xl overflow-hidden mb-4">
-        <QrReader
-          delay={300}
-          onError={handleError}
-          onScan={handleScan}
-          style={{ width: "100%", height: "100%" }}
-        />
-      </div>
+      <div id="reader" className="w-full max-w-sm mx-auto" />
 
       {result && (
-        <p className="mt-3 text-sm text-gray-600">
-          ✅ QR Detected: <strong>{result}</strong>
+        <p className="mt-4 text-center">
+          <strong>QR:</strong> {result}
         </p>
       )}
 
       {userData && (
-        <div className="mt-6 bg-white p-4 rounded-xl shadow-md w-80">
-          <h2 className="text-lg font-semibold mb-2">User Info</h2>
+        <div className="mt-4 p-4 bg-white shadow rounded">
           <p><strong>Name:</strong> {userData.name}</p>
           <p><strong>Email:</strong> {userData.email}</p>
         </div>
       )}
-
-      {error && <p className="text-red-500 mt-3">{error}</p>}
     </div>
   );
 }
