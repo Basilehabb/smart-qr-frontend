@@ -13,7 +13,7 @@ export default function AdminLogin() {
       const res = await api.post("/auth/login", { email, password });
       
       // Save token
-      localStorage.setItem("adminToken", res.data.token);
+      localStorage.setItem("token", res.data.token);
 
       // redirect to dashboard
       router.push("/admin/dashboard");
