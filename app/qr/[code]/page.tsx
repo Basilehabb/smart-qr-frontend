@@ -39,7 +39,7 @@ export default async function Page({ params }: Props) {
               </a>
 
               <a
-                href={`/login?code=${code}&return=/user/edit`}
+                href={`/login?code=${code}&return=/user/edit?code=${code}`}
                 className="px-4 py-2 border border-blue-600 text-blue-600 rounded"
               >
                 Login to Link
@@ -61,7 +61,7 @@ export default async function Page({ params }: Props) {
 
           {/* Edit Profile Button */}
           <a
-            href={`/login?code=${code}&return=/user/edit`}
+            href={`/login?code=${code}&return=/user/edit?code=${code}`}
             className="px-4 py-2 bg-blue-600 text-white rounded"
           >
             Edit Profile

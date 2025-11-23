@@ -12,18 +12,28 @@ export default function ScanPage() {
   const [userData, setUserData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleScan = async (data: string | null) => {
-    if (data && data !== result) {
-      setResult(data);
+  const extractCode = (data: string) => {
+    try {
+      if (!data.includes("http")) return data.trim();
+      return data.split("/").pop()!.trim();
+    } catch {
+      return data;
+    }
+  };
 
-      try {
-        const res = await api.get(`/qr/${data}`);
-        setUserData(res.data.user);
-        setError(null);
-      } catch (err: any) {
-        console.error(err);
-        setError("No user found for this QR code");
-      }
+  const handleScan = async (data: string | null) => {
+    if (!data || data === result) return;
+
+    const code = extractCode(data);
+    setResult(code);
+
+    try {
+      const res = await api.get(`/qr/${code}`);
+      setUserData(res.data.user || null);
+      setError(null);
+    } catch (err) {
+      setUserData(null);
+      setError("No user found for this QR code");
     }
   };
 

@@ -136,29 +136,27 @@ export default function AdminDashboardPage() {
             SHOW NEW QR + LINK
         =========================== */}
         {qrCode && (
-          <div className="bg-white p-6 rounded-lg shadow text-center">
-            <h4 className="text-lg font-semibold mb-3">New QR</h4>
+  <div className="bg-white p-6 rounded-lg shadow text-center">
+    <h4 className="text-lg font-semibold mb-3">New QR</h4>
 
-            <QRCode
-              value={`http://localhost:3000/qr/${qrCode}`}
-              size={160}
-            />
+    <QRCode
+      value={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${qrCode}`}
+      size={160}
+    />
 
-            <p className="mt-3 font-semibold text-gray-800">
-              {qrCode}
-            </p>
+    <p className="mt-3 font-semibold text-gray-800">{qrCode}</p>
 
-            <p className="text-sm text-gray-600 mt-3">Scan or open:</p>
+    <p className="text-sm text-gray-600 mt-3">Scan or open:</p>
 
-            <a
-              href={`http://localhost:3000/qr/${qrCode}`}
-              target="_blank"
-              className="text-blue-600 underline break-all text-sm"
-            >
-              {`http://localhost:3000/qr/${qrCode}`}
-            </a>
-          </div>
-        )}
+    <a
+      href={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${qrCode}`}
+      target="_blank"
+      className="text-blue-600 underline break-all text-sm"
+    >
+      {`${process.env.NEXT_PUBLIC_APP_URL}/qr/${qrCode}`}
+    </a>
+  </div>
+)}
 
         {/* ==========================
             LOGOUT

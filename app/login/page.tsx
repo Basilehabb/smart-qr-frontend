@@ -33,13 +33,15 @@ export default function LoginPage() {
       // لو جا عشان يربط QR
       if (code) {
         await api.post(
-          `/qr/link/${code}`,
-          {},
+          "/qr/link",
+          { code },
           { headers: { Authorization: `Bearer ${res.data.token}` } }
         );
+      
         router.push(`/qr/${code}`);
         return;
       }
+      
 
       // Default redirect
       if (res.data.user.isAdmin) router.push("/admin/dashboard");
