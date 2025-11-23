@@ -1,77 +1,85 @@
 "use client";
+
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const search = useSearchParams();
-  const linkCode = search?.get("code") || null;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     try {
       setError(null);
       setLoading(true);
 
-      // 1) register
-      await api.post("/auth/register", { name, email, password });
+      const res = await api.post("/auth/register", { name, email, password });
 
-      // 2) login
-      const loginRes = await api.post("/auth/login", { email, password });
-      const token = loginRes.data.token;
-      localStorage.setItem("token", token);
-
-      // 3) link QR if exists
-      if (linkCode) {
-        await api.post(
-          `/qr/link/${linkCode}`,   // ← هنا التصحيح
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        router.push(`/qr/${linkCode}`);
-        return;
+      if (res.status === 201) {
+        alert("Registration successful! You can now log in.");
+        router.push("/login");
       }
-
-      // otherwise go to profile
-      router.push("/user/dashboard");
-
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Registration failed");
+      console.error(err);
+      setError(err?.response?.data?.message || "Registration failed, please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl mb-4">Create Account</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="bg-white shadow-lg p-8 rounded-2xl w-80">
+        <h1 className="text-2xl font-bold mb-4 text-center">Create Account</h1>
 
-        {error && <p className="text-red-500 mb-2">{error}</p>}
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border px-3 py-2 mb-2 rounded w-full"
+        />
 
-        <input className="w-full mb-2 p-2 border rounded" placeholder="Full name"
-          value={name} onChange={e => setName(e.target.value)} />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border px-3 py-2 mb-2 rounded w-full"
+        />
 
-        <input className="w-full mb-2 p-2 border rounded" placeholder="Email"
-          value={email} onChange={e => setEmail(e.target.value)} />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border px-3 py-2 mb-3 rounded w-full"
+        />
 
-        <input type="password" className="w-full mb-4 p-2 border rounded"
-          placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+        {error && <p className="text-red-500 mb-2 text-center">{error}</p>}
 
         <button
-          className="w-full py-2 bg-blue-600 text-white rounded"
           onClick={handleRegister}
           disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700 transition"
         >
-          {loading ? "Registering..." : "Register & Link"}
+          {loading ? "Registering..." : "Register"}
         </button>
+
+        <p className="text-center text-sm text-gray-600 mt-3">
+          Already have an account?{" "}
+          <span
+            onClick={() => router.push("/login")}
+            className="text-blue-600 cursor-pointer hover:underline"
+          >
+            Login
+          </span>
+        </p>
       </div>
     </div>
   );
