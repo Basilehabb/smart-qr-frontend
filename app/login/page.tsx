@@ -1,13 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const login = async () => {
     try {
@@ -16,14 +15,19 @@ export default function AdminLogin() {
       const token = res.data.token;
       const user  = res.data.user;
 
-      // نقرأ return URL لو موجود
-      const returnUrl = searchParams.get("return");
+      const returnUrl = localStorage.getItem("return-url");
   
-      // فصل التوكن بين الأدمن واليوزر
       if (user.isAdmin) {
         localStorage.setItem("admin-token", token);
       } else {
         localStorage.setItem("user-token", token);
+      }
+
+      // لو فيه return URL → رجّعه لنفس الصفحة
+      if (!user.isAdmin && returnUrl) {
+        localStorage.removeItem("return-url");
+        router.push(returnUrl);
+        return;
       }
   
       // لو أدمن → Dashboard الأدمن
@@ -32,17 +36,11 @@ export default function AdminLogin() {
         return;
       }
 
-      // لو فيه return URL → رجعه لنفس صفحة الـ Edit
-      if (returnUrl) {
-        router.push(returnUrl);
-        return;
-      }
-  
-      // لو مفيش return → رجّعه للـ QR بتاعه
+      // لو مفيش return → QR
       router.push(`/qr/${user.code}`);
         
     } catch (err) {
-      alert("Invalid admin credentials");
+      alert("Invalid credentials");
     }
   };
   
