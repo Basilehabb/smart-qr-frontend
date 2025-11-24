@@ -11,18 +11,25 @@ export default function AdminLogin() {
   const login = async () => {
     try {
       const res = await api.post("/auth/login", { email, password });
-      
-      // Save token
-      localStorage.setItem("user-token", res.data.token);
-
+  
+      const token = res.data.token;
+      const user  = res.data.user;
+  
+      // فصل التوكن بين الأدمن واليوزر
+      if (user.isAdmin) {
+        localStorage.setItem("admin-token", token);
+      } else {
+        localStorage.setItem("user-token", token);
+      }
+  
       // redirect to dashboard
       router.push("/admin/dashboard");
-
+  
     } catch (err) {
       alert("Invalid admin credentials");
     }
   };
-
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <input 

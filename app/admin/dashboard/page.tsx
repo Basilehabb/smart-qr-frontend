@@ -18,7 +18,7 @@ export default function AdminDashboardPage() {
   // Load Admin + Users List
   // =======================
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("admin-token")
 
     if (!token) {
       router.push("/login");
@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
   const handleCreateQR = async () => {
     try {
       setCreatingQR(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("admin-token")
 
       const res = await api.post(
         "/qr/create",
