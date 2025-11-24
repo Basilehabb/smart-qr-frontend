@@ -18,6 +18,7 @@ export default async function Page({ params }: Props) {
   try {
     const data = await fetchQr(code);
 
+    // CASE 1 — QR NOT LINKED
     if (!data.user) {
       return (
         <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -35,25 +36,29 @@ export default async function Page({ params }: Props) {
                 Register & Link
               </a>
 
-              <a
-                href={`/login`}
+              {/* ⬅ Login to Link + حفظ الكود في localStorage */}
+              <button
+                onClick={() => {
+                  localStorage.setItem("qr-to-link", code);
+                  window.location.href = "/login";
+                }}
                 className="px-4 py-2 border border-blue-600 text-blue-600 rounded"
               >
                 Login to Link
-              </a>
+              </button>
             </div>
           </div>
         </main>
       );
     }
 
+    // CASE 2 — QR LINKED
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="p-8 bg-white rounded shadow max-w-md w-full text-center">
           <h1 className="text-2xl font-bold mb-2">Hello, {data.user.name}</h1>
           <p className="text-sm text-gray-600 mb-4">Email: {data.user.email}</p>
 
-          {/* زر الـ Edit الحقيقي */}
           <EditButton />
         </div>
       </main>
