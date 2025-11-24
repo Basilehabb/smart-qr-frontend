@@ -21,6 +21,8 @@ export default function AdminLogin() {
         return;
       }
       
+      localStorage.setItem("user-token", token);
+
       // نجيب QR الحقيقي من السيرفر
       const qrRes = await api.get("/qr/my", {
         headers: { Authorization: `Bearer ${token}` }
