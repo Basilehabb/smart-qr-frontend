@@ -1,5 +1,4 @@
 // app/qr/[code]/page.tsx
-import React from "react";
 import EditButton from "./EditButton";
 
 type Props = { params: { code: string } };
@@ -19,7 +18,6 @@ export default async function Page({ params }: Props) {
   try {
     const data = await fetchQr(code);
 
-    // CASE 1 — QR NOT LINKED
     if (!data.user) {
       return (
         <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -40,11 +38,6 @@ export default async function Page({ params }: Props) {
               <a
                 href={`/login`}
                 className="px-4 py-2 border border-blue-600 text-blue-600 rounded"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    localStorage.setItem("return-url", `/user/edit`);
-                  }
-                }}
               >
                 Login to Link
               </a>
@@ -54,25 +47,14 @@ export default async function Page({ params }: Props) {
       );
     }
 
-    // CASE 2 — QR LINKED
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="p-8 bg-white rounded shadow max-w-md w-full text-center">
           <h1 className="text-2xl font-bold mb-2">Hello, {data.user.name}</h1>
           <p className="text-sm text-gray-600 mb-4">Email: {data.user.email}</p>
 
-          {/* زر Edit يعمل redirect صح */}
-          <a
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                localStorage.setItem("return-url", "/user/edit");
-                window.location.href = "/login";
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer"
-          >
-            <EditButton />
-          </a>
+          {/* زر الـ Edit الحقيقي */}
+          <EditButton />
         </div>
       </main>
     );
