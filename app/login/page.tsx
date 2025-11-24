@@ -16,6 +16,7 @@ export default function AdminLogin() {
       const user  = res.data.user;
   
       if (user.isAdmin) {
+        localStorage.setItem("admin-token", token);  // <— مهم جداً
         router.push("/admin/dashboard");
         return;
       }
