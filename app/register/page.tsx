@@ -1,71 +1,123 @@
-"use client";
+'use client';
 
-export const dynamic = "force-dynamic";
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
-
-export default function RegisterPage() {
+// Component الداخلي اللي بيستخدم useSearchParams
+function RegisterForm() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const params = useSearchParams();
-  const code = params.get("code");
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      setError(null);
-      setLoading(true);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
+        formData
+      );
 
-      await api.post("/auth/register", { name, email, password });
-
-      const loginRes = await api.post("/auth/login", { email, password });
-      const token = loginRes.data.token;
-
-      localStorage.setItem("token", token);
-
-      if (code) {
-        await api.post(
-          `/qr/link/${code}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        router.push(`/qr/${code}`);
-        return;
-      }
-
-      router.push("/user/dashboard");
+      // Redirect to login after successful registration
+      router.push('/login?registered=true');
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Registration failed.");
+      setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-lg p-8 rounded-2xl w-80">
-        <h1 className="text-2xl font-bold mb-4 text-center">Create Account</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+        <h2 className="text-3xl font-bold text-center">Register</h2>
+        
+        {error && (
+          <div className="bg-red-50 text-red-500 p-3 rounded">
+            {error}
+          </div>
+        )}
 
-        <input className="border p-2 mb-2 w-full rounded" placeholder="Full Name" onChange={(e) => setName(e.target.value)} />
-        <input className="border p-2 mb-2 w-full rounded" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-        <input className="border p-2 mb-3 w-full rounded" type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
+            <input
+              type="text"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
 
-        {error && <p className="text-red-500 text-center mb-2">{error}</p>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
 
-        <button
-          onClick={handleRegister}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
-        >
-          {loading ? "Registering..." : "Register"}
-        </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-gray-600">
+          Already have an account?{' '}
+          <a href="/login" className="text-blue-600 hover:text-blue-500">
+            Login
+          </a>
+        </p>
       </div>
     </div>
+  );
+}
+
+// Component الخارجي مع Suspense
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
