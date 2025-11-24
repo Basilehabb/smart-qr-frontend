@@ -6,19 +6,14 @@ type Props = { params: { code: string } };
 async function fetchQr(code: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${code}`, {
     cache: "no-store",
-    next: { revalidate: 0 }
   });
-  
+
   if (!res.ok) throw new Error("QR not found");
   return res.json();
 }
 
 export default async function Page({ params }: Props) {
   const code = params.code;
-
-  // 🔥 أهم تعديل في الصفحة:
-  // return ثابت بدون الكود
-  const returnUrl = encodeURIComponent(`/user/edit`);
 
   try {
     const data = await fetchQr(code);
@@ -42,8 +37,13 @@ export default async function Page({ params }: Props) {
               </a>
 
               <a
-                href={`/login?return=${returnUrl}`}
+                href={`/login`}
                 className="px-4 py-2 border border-blue-600 text-blue-600 rounded"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("return-url", `/user/edit`);
+                  }
+                }}
               >
                 Login to Link
               </a>
@@ -60,10 +60,15 @@ export default async function Page({ params }: Props) {
           <h1 className="text-2xl font-bold mb-2">Hello, {data.user.name}</h1>
           <p className="text-sm text-gray-600 mb-4">Email: {data.user.email}</p>
 
-          {/* 🔥 أهم زرّ: Edit يروح Login لكن مع return=/user/edit */}
+          {/* زر Edit يعمل redirect صح */}
           <a
-            href={`/login?return=${returnUrl}`}
-            className="px-4 py-2 bg-blue-600 text-white rounded"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.setItem("return-url", "/user/edit");
+                window.location.href = "/login";
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer"
           >
             Edit Profile
           </a>
