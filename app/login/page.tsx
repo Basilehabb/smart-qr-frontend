@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const login = async () => {
     try {
@@ -14,6 +15,9 @@ export default function AdminLogin() {
   
       const token = res.data.token;
       const user  = res.data.user;
+
+      // نقرأ return URL لو موجود
+      const returnUrl = searchParams.get("return");
   
       // فصل التوكن بين الأدمن واليوزر
       if (user.isAdmin) {
@@ -22,12 +26,20 @@ export default function AdminLogin() {
         localStorage.setItem("user-token", token);
       }
   
-      // redirect to dashboard
+      // لو أدمن → Dashboard الأدمن
       if (user.isAdmin) {
         router.push("/admin/dashboard");
-      } else {
-        router.push(`/qr/${user.code}`);
-      }      
+        return;
+      }
+
+      // لو فيه return URL → رجعه لنفس صفحة الـ Edit
+      if (returnUrl) {
+        router.push(returnUrl);
+        return;
+      }
+  
+      // لو مفيش return → رجّعه للـ QR بتاعه
+      router.push(`/qr/${user.code}`);
         
     } catch (err) {
       alert("Invalid admin credentials");
