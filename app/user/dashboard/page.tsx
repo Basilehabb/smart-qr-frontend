@@ -11,7 +11,7 @@ export default function UserDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("user-token")
     if (!token) {
       router.push("/login");
       return;

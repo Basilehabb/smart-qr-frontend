@@ -20,7 +20,8 @@ export default function EditProfilePage() {
 
   // Load user data
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("user-token")
+
     if (!token) return router.push("/login");
 
     (async () => {
@@ -44,7 +45,8 @@ export default function EditProfilePage() {
 
   // 🔥 Return to the QR linked to this user
   const getQRDetails = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("user-token")
+
     if (!token) return router.push("/");
 
     const res = await api.get("/qr/my", {
@@ -61,7 +63,7 @@ export default function EditProfilePage() {
     try {
       setError(null);
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("user-token")
 
       await api.put(
         "/auth/update",

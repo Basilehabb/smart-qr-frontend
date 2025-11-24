@@ -46,7 +46,7 @@ function RegisterForm() {
       const user = loginRes.data.user;
 
       // Save to localStorage
-      localStorage.setItem('token', token);
+      localStorage.setItem("user-token", token)
       localStorage.setItem('user', JSON.stringify(user));
 
       // 3️⃣ If QR code exists → Link it
