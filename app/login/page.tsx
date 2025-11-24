@@ -11,40 +11,48 @@ export default function AdminLogin() {
   const login = async () => {
     try {
       const res = await api.post("/auth/login", { email, password });
-  
+
       const token = res.data.token;
       const user  = res.data.user;
-  
+
       if (user.isAdmin) {
-        localStorage.setItem("admin-token", token);  // <— مهم جداً
+        localStorage.setItem("admin-token", token);
         router.push("/admin/dashboard");
         return;
       }
-      
+
       localStorage.setItem("user-token", token);
 
-      // نجيب QR الحقيقي من السيرفر
+      // ⬅ مهم: جلب كل الـ QR codes
       const qrRes = await api.get("/qr/my", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const code = qrRes.data?.code;
-      
-      // لو فيه return-url → رجّعه ليها
+
+      const codes = qrRes.data?.codes;
+
+      if (!codes || codes.length === 0) {
+        alert("لا يوجد QR مربوط بهذا الحساب");
+        return;
+      }
+
+      const code = codes[0]; // أول QR
+
+      // return-url (edit button)
       const returnUrl = localStorage.getItem("return-url");
       if (returnUrl) {
         localStorage.removeItem("return-url");
         router.push(returnUrl);
         return;
       }
-      
-      // لو مفيش return → افتح QR الحقيقي
+
+      // فتح أول QR
       router.push(`/qr/${code}`);
-        
+
     } catch (err) {
       alert("Invalid credentials");
     }
   };
-  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <input 
