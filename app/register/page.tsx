@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const search = useSearchParams();
+  const linkCode = search?.get("code") || null;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -18,15 +20,32 @@ export default function RegisterPage() {
       setError(null);
       setLoading(true);
 
-      const res = await api.post("/auth/register", { name, email, password });
+      // 1) register
+      await api.post("/auth/register", { name, email, password });
 
-      if (res.status === 201) {
-        alert("Registration successful! You can now log in.");
-        router.push("/login");
+      // 2) login
+      const loginRes = await api.post("/auth/login", { email, password });
+      const token = loginRes.data.token;
+      localStorage.setItem("token", token);
+
+      // 3) link QR if exists
+      if (linkCode) {
+        await api.post(
+          `/qr/link/${linkCode}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        router.push(`/qr/${linkCode}`); // ⭐ مهم جداً
+        return;
       }
+
+      // otherwise go to profile
+      router.push("/user/dashboard");
+
     } catch (err: any) {
       console.error(err);
-      setError(err?.response?.data?.message || "Registration failed, please try again.");
+      setError(err?.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -70,16 +89,6 @@ export default function RegisterPage() {
         >
           {loading ? "Registering..." : "Register"}
         </button>
-
-        <p className="text-center text-sm text-gray-600 mt-3">
-          Already have an account?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="text-blue-600 cursor-pointer hover:underline"
-          >
-            Login
-          </span>
-        </p>
       </div>
     </div>
   );
