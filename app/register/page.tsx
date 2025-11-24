@@ -72,7 +72,7 @@ function RegisterForm() {
       }
 
       // 5️⃣ Otherwise → dashboard
-      router.push('/user/dashboard');
+      router.push(`/qr/${code}`);
 
     } catch (err: any) {
       console.error('Registration error:', err);

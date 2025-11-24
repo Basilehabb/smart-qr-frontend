@@ -32,10 +32,10 @@ export default function AdminDashboardPage() {
         });
 
         if (!me.data.user.isAdmin) {
-          router.push("/user/dashboard");
+          router.push("/login");
           return;
         }
-
+        
         setAdmin(me.data.user);
 
         const usersRes = await api.get("/admin/users", {

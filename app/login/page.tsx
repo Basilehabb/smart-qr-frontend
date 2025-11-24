@@ -23,8 +23,12 @@ export default function AdminLogin() {
       }
   
       // redirect to dashboard
-      router.push("/admin/dashboard");
-  
+      if (user.isAdmin) {
+        router.push("/admin/dashboard");
+      } else {
+        router.push(`/qr/${user.code}`);
+      }      
+        
     } catch (err) {
       alert("Invalid admin credentials");
     }
