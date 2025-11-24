@@ -1,5 +1,6 @@
 // app/qr/[code]/page.tsx
 import EditButton from "./EditButton";
+import LoginToLinkButton from "./LoginToLinkButton";
 
 type Props = { params: { code: string } };
 
@@ -37,15 +38,16 @@ export default async function Page({ params }: Props) {
               </a>
 
               {/* ⬅ Login to Link + حفظ الكود في localStorage */}
-              <button
-                onClick={() => {
-                  localStorage.setItem("qr-to-link", code);
-                  window.location.href = "/login";
-                }}
-                className="px-4 py-2 border border-blue-600 text-blue-600 rounded"
-              >
-                Login to Link
-              </button>
+              <div className="flex justify-center gap-4 mt-4">
+                <a
+                  href={`/register?code=${code}`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                  Register & Link
+                </a>
+                {/* زر Login الصحيح */}
+                <LoginToLinkButton code={code} />
+              </div>
             </div>
           </div>
         </main>
