@@ -1,4 +1,6 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -6,8 +8,8 @@ import { api } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const search = useSearchParams();
-  const linkCode = search?.get("code") || null;
+  const params = useSearchParams();
+  const code = params.get("code"); // ← مهم جدًا
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,32 +22,32 @@ export default function RegisterPage() {
       setError(null);
       setLoading(true);
 
-      // 1) register
+      // 1) Register
       await api.post("/auth/register", { name, email, password });
 
-      // 2) login
+      // 2) Login
       const loginRes = await api.post("/auth/login", { email, password });
       const token = loginRes.data.token;
+
       localStorage.setItem("token", token);
 
-      // 3) link QR if exists
-      if (linkCode) {
+      // 3) Link QR if provided
+      if (code) {
         await api.post(
-          `/qr/link/${linkCode}`,
+          `/qr/link/${code}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        router.push(`/qr/${linkCode}`); // ⭐ مهم جداً
+        // 4) Redirect back to QR page
+        router.push(`/qr/${code}`);
         return;
       }
 
-      // otherwise go to profile
+      // Default redirect
       router.push("/user/dashboard");
-
     } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || "Registration failed");
+      setError(err?.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -56,38 +58,19 @@ export default function RegisterPage() {
       <div className="bg-white shadow-lg p-8 rounded-2xl w-80">
         <h1 className="text-2xl font-bold mb-4 text-center">Create Account</h1>
 
-        <input
-          type="text"
-          placeholder="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border px-3 py-2 mb-2 rounded w-full"
-        />
+        <input className="border p-2 mb-2 w-full rounded" placeholder="Full Name" onChange={(e) => setName(e.target.value)} />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border px-3 py-2 mb-2 rounded w-full"
-        />
+        <input className="border p-2 mb-2 w-full rounded" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border px-3 py-2 mb-3 rounded w-full"
-        />
+        <input className="border p-2 mb-3 w-full rounded" type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
 
-        {error && <p className="text-red-500 mb-2 text-center">{error}</p>}
+        {error && <p className="text-red-500 text-center mb-2">{error}</p>}
 
         <button
           onClick={handleRegister}
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
         >
-          {loading ? "Registering..." : "Register"}
+          {loading ? "Registering..." : "Register & Link"}
         </button>
       </div>
     </div>
