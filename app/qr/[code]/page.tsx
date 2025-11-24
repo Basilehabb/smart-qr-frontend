@@ -6,8 +6,9 @@ type Props = { params: { code: string } };
 async function fetchQr(code: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${code}`, {
     cache: "no-store",
+    next: { revalidate: 0 }
   });
-
+  
   if (!res.ok) throw new Error("QR not found");
   return res.json();
 }
