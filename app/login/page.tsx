@@ -14,37 +14,27 @@ export default function AdminLogin() {
   
       const token = res.data.token;
       const user  = res.data.user;
-
-      const returnUrl = localStorage.getItem("return-url");
   
-      // فصل التوكن بين الأدمن واليوزر
-      if (user.isAdmin) {
-        localStorage.setItem("admin-token", token);
-      } else {
-        localStorage.setItem("user-token", token);
-      }
-
-      // لو أدمن → Dashboard الأدمن
       if (user.isAdmin) {
         router.push("/admin/dashboard");
         return;
       }
-
-      // لو يوزر → نجيب QR الحقيقي من السيرفر
+      
+      // نجيب QR الحقيقي من السيرفر
       const qrRes = await api.get("/qr/my", {
         headers: { Authorization: `Bearer ${token}` }
       });
-
       const code = qrRes.data?.code;
-
-      // لو فيه return URL → رجّعه لنفس صفحة الـ Edit
+      
+      // لو فيه return-url → رجّعه ليها
+      const returnUrl = localStorage.getItem("return-url");
       if (returnUrl) {
         localStorage.removeItem("return-url");
         router.push(returnUrl);
         return;
       }
-  
-      // لو مفيش return → نرجعه للـ QR
+      
+      // لو مفيش return → افتح QR الحقيقي
       router.push(`/qr/${code}`);
         
     } catch (err) {
