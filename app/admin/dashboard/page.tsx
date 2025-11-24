@@ -164,7 +164,7 @@ export default function AdminDashboardPage() {
         <div className="text-center mt-4">
           <button
             onClick={() => {
-              localStorage.removeItem("token");
+              localStorage.removeItem("admin-token");
               router.push("/login");
             }}
             className="px-4 py-2 border rounded hover:bg-gray-100"
