@@ -17,27 +17,35 @@ export default function AdminLogin() {
 
       const returnUrl = localStorage.getItem("return-url");
   
+      // فصل التوكن بين الأدمن واليوزر
       if (user.isAdmin) {
         localStorage.setItem("admin-token", token);
       } else {
         localStorage.setItem("user-token", token);
       }
 
-      // لو فيه return URL → رجّعه لنفس الصفحة
-      if (!user.isAdmin && returnUrl) {
-        localStorage.removeItem("return-url");
-        router.push(returnUrl);
-        return;
-      }
-  
       // لو أدمن → Dashboard الأدمن
       if (user.isAdmin) {
         router.push("/admin/dashboard");
         return;
       }
 
-      // لو مفيش return → QR
-      router.push(`/qr/${user.code}`);
+      // لو يوزر → نجيب QR الحقيقي من السيرفر
+      const qrRes = await api.get("/qr/my", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const code = qrRes.data?.code;
+
+      // لو فيه return URL → رجّعه لنفس صفحة الـ Edit
+      if (returnUrl) {
+        localStorage.removeItem("return-url");
+        router.push(returnUrl);
+        return;
+      }
+  
+      // لو مفيش return → نرجعه للـ QR
+      router.push(`/qr/${code}`);
         
     } catch (err) {
       alert("Invalid credentials");
