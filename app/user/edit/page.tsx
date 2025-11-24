@@ -55,7 +55,12 @@ export default function EditProfilePage() {
   const getQRDetails = async () => {
     const token = localStorage.getItem("user-token");
 
-    if (!token) return router.push("/");
+    if (!token) {
+      localStorage.setItem("return-url", "/user/edit");
+      router.push("/login");
+      return;
+    }
+    
 
     const res = await api.get("/qr/my", {
       headers: { Authorization: `Bearer ${token}` },
