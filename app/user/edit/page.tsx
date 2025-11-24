@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export default function EditProfilePage() {
@@ -20,9 +20,17 @@ export default function EditProfilePage() {
 
   // Load user data
   useEffect(() => {
-    const token = localStorage.getItem("user-token")
+    const token = localStorage.getItem("user-token");
 
-    if (!token) return router.push("/login");
+    // المستخدم مش لوجين → نرجع return-url لصفحة edit نفسها
+    if (!token) {
+      localStorage.setItem(
+        "return-url",
+        window.location.pathname + window.location.search
+      );
+      router.push("/login");
+      return;
+    }
 
     (async () => {
       try {
@@ -43,9 +51,9 @@ export default function EditProfilePage() {
     })();
   }, []);
 
-  // 🔥 Return to the QR linked to this user
+  // Return to QR
   const getQRDetails = async () => {
-    const token = localStorage.getItem("user-token")
+    const token = localStorage.getItem("user-token");
 
     if (!token) return router.push("/");
 
@@ -58,12 +66,11 @@ export default function EditProfilePage() {
     else router.push("/");
   };
 
-  // Save profile
   const saveProfile = async () => {
     try {
       setError(null);
 
-      const token = localStorage.getItem("user-token")
+      const token = localStorage.getItem("user-token");
 
       await api.put(
         "/auth/update",
