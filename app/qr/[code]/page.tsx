@@ -1,5 +1,6 @@
 // app/qr/[code]/page.tsx
 import React from "react";
+import EditButton from "./EditButton";
 
 type Props = { params: { code: string } };
 
@@ -70,7 +71,7 @@ export default async function Page({ params }: Props) {
             }}
             className="px-4 py-2 bg-blue-600 text-white rounded cursor-pointer"
           >
-            Edit Profile
+            <EditButton />
           </a>
         </div>
       </main>
