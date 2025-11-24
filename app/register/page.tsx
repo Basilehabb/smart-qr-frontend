@@ -6,15 +6,19 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
-// Component الداخلي اللي بيستخدم useSearchParams
+// Component الداخلي
 function RegisterForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const code = searchParams.get("code"); // مهم جداً
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -24,15 +28,51 @@ function RegisterForm() {
     setError('');
 
     try {
-      const response = await axios.post(
+      // ------------------------
+      // 1) Register user
+      // ------------------------
+      await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
         formData
       );
 
-      // Redirect to login after successful registration
-      router.push('/login?registered=true');
+      // ------------------------
+      // 2) Login user
+      // ------------------------
+      const loginRes = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      const token = loginRes.data.token;
+
+      // ------------------------
+      // 3) If QR exists → link it
+      // ------------------------
+      if (code) {
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/qr/link/${code}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // ------------------------
+        // 4) Redirect to QR page
+        // ------------------------
+        router.push(`/qr/${code}`);
+        return;
+      }
+
+      // ------------------------
+      // Otherwise → go to dashboard
+      // ------------------------
+      router.push("/user/dashboard");
+
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -42,7 +82,7 @@ function RegisterForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <h2 className="text-3xl font-bold text-center">Register</h2>
-        
+
         {error && (
           <div className="bg-red-50 text-red-500 p-3 rounded">
             {error}
@@ -59,7 +99,9 @@ function RegisterForm() {
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
             />
           </div>
 
@@ -72,7 +114,9 @@ function RegisterForm() {
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
             />
           </div>
 
@@ -85,7 +129,9 @@ function RegisterForm() {
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
             />
           </div>
 
@@ -109,14 +155,16 @@ function RegisterForm() {
   );
 }
 
-// Component الخارجي مع Suspense
+// Suspension Wrapper
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-lg">Loading...</div>
+        </div>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );
