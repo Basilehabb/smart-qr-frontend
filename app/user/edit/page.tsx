@@ -54,23 +54,30 @@ export default function EditProfilePage() {
   // Return to QR
   const getQRDetails = async () => {
     const token = localStorage.getItem("user-token");
-
+  
     if (!token) {
       localStorage.setItem("return-url", "/user/edit");
       router.push("/login");
       return;
     }
-    
-
+  
     const res = await api.get("/qr/my", {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    const code = res.data.code;
-    if (code) router.push(`/qr/${code}`);
-    else router.push("/");
+  
+    const codes = res.data.codes;
+  
+    // مفيش QR مربوط
+    if (!codes || codes.length === 0) {
+      router.push("/");
+      return;
+    }
+  
+    // أول QR
+    const code = codes[0];
+    router.push(`/qr/${code}`);
   };
-
+  
   const saveProfile = async () => {
     try {
       setError(null);
