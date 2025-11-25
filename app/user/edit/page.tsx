@@ -24,10 +24,6 @@ export default function EditProfilePage() {
 
     // المستخدم مش لوجين → نرجع return-url لصفحة edit نفسها
     if (!token) {
-      localStorage.setItem(
-        "return-url",
-        window.location.pathname + window.location.search
-      );
       router.push("/login");
       return;
     }

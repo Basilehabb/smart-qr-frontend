@@ -41,10 +41,11 @@ export default function LoginPage() {
       // ⬅ return-url (edit)
       const returnUrl = localStorage.getItem("return-url");
       if (returnUrl) {
-        localStorage.removeItem("return-url");
         router.push(returnUrl);
+        localStorage.removeItem("return-url");
         return;
       }
+
 
       // otherwise: fetch user QRs
       const qrRes = await api.get("/qr/my", {
