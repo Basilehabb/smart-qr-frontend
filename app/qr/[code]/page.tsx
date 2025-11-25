@@ -28,15 +28,6 @@ export default async function Page({ params }: Props) {
             <p className="text-gray-600 mb-4">
               يمكنك تسجيل حساب جديد أو تسجيل دخول لربط هذا QR.
             </p>
-
-            <div className="flex justify-center gap-4 mt-4">
-              <a
-                href={`/register?code=${code}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-              >
-                Register & Link
-              </a>
-
               {/* ⬅ Login to Link + حفظ الكود في localStorage */}
               <div className="flex justify-center gap-4 mt-4">
                 <a
@@ -49,7 +40,6 @@ export default async function Page({ params }: Props) {
                 <LoginToLinkButton code={code} />
               </div>
             </div>
-          </div>
         </main>
       );
     }
