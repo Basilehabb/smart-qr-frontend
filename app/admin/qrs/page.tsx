@@ -14,9 +14,10 @@ export default function AdminQRsPage() {
 
   const [admin, setAdmin] = useState<any | null>(null);
 
-  // ==========================
-  // Load Admin + QR List
-  // ==========================
+  // For Create QR Modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCode, setNewCode] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("admin-token");
 
@@ -52,6 +53,31 @@ export default function AdminQRsPage() {
     })();
   }, [router]);
 
+
+  // ==========================
+  // Create QR
+  // ==========================
+  const createQR = async () => {
+    const token = localStorage.getItem("admin-token");
+
+    try {
+      const res = await api.post(
+        "/admin/qrs",
+        { code: newCode }, // لو فاضية → backend يعمل auto-generate
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setQrs(prev => [...prev, res.data.qr]); // add to list
+      setNewCode("");
+      setShowCreateModal(false);
+
+      alert("QR Created Successfully!");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to create QR");
+    }
+  };
+
+
   // ==========================
   // Delete QR
   // ==========================
@@ -80,13 +106,12 @@ export default function AdminQRsPage() {
     });
 
     setQrs(prev =>
-      prev.map(q => q.code === code ? { ...q, userId: null } : q)
+      prev.map(q =>
+        q.code === code ? { ...q, userId: null } : q
+      )
     );
   };
 
-  // ==========================
-  // Render
-  // ==========================
   if (loading) return <p className="text-center mt-20">Loading...</p>;
 
   return (
@@ -98,7 +123,17 @@ export default function AdminQRsPage() {
       <div className="flex-1 p-6">
         <div className="max-w-5xl mx-auto space-y-6">
 
-          <h1 className="text-2xl font-bold">All QR Codes</h1>
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">All QR Codes</h1>
+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded"
+            >
+              + Create QR
+            </button>
+          </div>
 
           {/* Search */}
           <input
@@ -181,6 +216,44 @@ export default function AdminQRsPage() {
 
         </div>
       </div>
+
+      {/* ===============================
+          CREATE QR MODAL
+      =============================== */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">Create New QR</h2>
+
+            <input
+              className="border px-3 py-2 rounded w-full mb-3"
+              placeholder="QR Code (optional)"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+            />
+
+            <p className="text-gray-500 text-sm mb-3">
+              * لو سيبتها فاضية: النظام هيعمل QR كود تلقائي
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 border rounded"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded"
+                onClick={createQR}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
