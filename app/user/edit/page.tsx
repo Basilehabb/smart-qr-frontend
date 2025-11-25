@@ -81,9 +81,9 @@ export default function EditProfilePage() {
   const saveProfile = async () => {
     try {
       setError(null);
-
+  
       const token = localStorage.getItem("user-token");
-
+  
       await api.put(
         "/auth/update",
         {
@@ -97,12 +97,25 @@ export default function EditProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      await getQRDetails();
+  
+      // بعد التعديل نرجع للـ QR الصحيح فقط
+      const res2 = await api.get("/qr/my", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      const codes = res2.data.codes;
+      if (!codes || codes.length === 0) {
+        router.push("/");
+        return;
+      }
+  
+      router.push(`/qr/${codes[0]}`);
+  
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to update profile");
     }
   };
+  
 
   if (loading) return <p className="text-center mt-10">Loading...</p>;
   if (!user) return null;
