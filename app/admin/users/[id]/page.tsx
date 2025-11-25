@@ -14,6 +14,14 @@ export default function UserDetailsPage() {
   const [qrs, setQrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    job: "",
+  });
+
   useEffect(() => {
     const token = localStorage.getItem("admin-token");
     if (!token) {
@@ -39,7 +47,14 @@ export default function UserDetailsPage() {
 
         setUser(foundUser);
 
-        // Fetch all QR codes → filter by this user
+        setEditData({
+          name: foundUser.name || "",
+          email: foundUser.email || "",
+          phone: foundUser.phone || "",
+          job: foundUser.job || "",
+        });
+
+        // Fetch QR codes linked to user
         const qrRes = await api.get("/admin/qrs", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -58,19 +73,41 @@ export default function UserDetailsPage() {
     })();
   }, [router, userId]);
 
-  const unlinkQR = async (code: string) => {
+  // ========================
+  // UPDATE USER
+  // ========================
+  const saveUser = async () => {
     const token = localStorage.getItem("admin-token");
 
     await api.patch(
-      `/admin/qrs/${code}/unlink`,
-      {},
+      `/admin/users/${userId}`,
+      editData,
       { headers: { Authorization: `Bearer ${token}` } }
     );
+
+    alert("User updated successfully");
+
+    setUser({ ...user, ...editData });
+    setIsEditing(false);
+  };
+
+  // ========================
+  // UNLINK QR
+  // ========================
+  const unlinkQR = async (code: string) => {
+    const token = localStorage.getItem("admin-token");
+
+    await api.patch(`/admin/qrs/${code}/unlink`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     alert("QR Unlinked");
     router.refresh();
   };
 
+  // ========================
+  // DELETE USER
+  // ========================
   const deleteUser = async () => {
     const confirmed = confirm("Are you sure you want to delete this user?");
     if (!confirmed) return;
@@ -85,12 +122,17 @@ export default function UserDetailsPage() {
     router.push("/admin/users");
   };
 
+  // ========================
+  // RENDER
+  // ========================
   if (loading)
     return <p className="text-center mt-20">Loading user...</p>;
 
   if (!user)
     return (
-      <p className="text-center text-red-600 mt-20">User not found</p>
+      <p className="text-center text-red-600 mt-20">
+        User not found
+      </p>
     );
 
   return (
@@ -116,20 +158,80 @@ export default function UserDetailsPage() {
 
           {/* USER CARD */}
           <div className="bg-white p-5 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-3">User Details</h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xl font-semibold">User Details</h2>
 
-            <p><b>Name:</b> {user.name}</p>
-            <p><b>Email:</b> {user.email}</p>
+              {!isEditing && (
+                <button
+                  className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit User
+                </button>
+              )}
+            </div>
 
-            {user.phone && <p><b>Phone:</b> {user.phone}</p>}
-            {user.job && <p><b>Job:</b> {user.job}</p>}
+            {!isEditing ? (
+              <>
+                <p><b>Name:</b> {user.name}</p>
+                <p><b>Email:</b> {user.email}</p>
+                {user.phone && <p><b>Phone:</b> {user.phone}</p>}
+                {user.job && <p><b>Job:</b> {user.job}</p>}
 
-            <button
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
-              onClick={deleteUser}
-            >
-              Delete User
-            </button>
+                <button
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
+                  onClick={deleteUser}
+                >
+                  Delete User
+                </button>
+              </>
+            ) : (
+              <>
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Phone"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Job"
+                  value={editData.job}
+                  onChange={(e) => setEditData({ ...editData, job: e.target.value })}
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                    onClick={saveUser}
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    className="px-4 py-2 border rounded"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* QR LIST */}
@@ -139,7 +241,7 @@ export default function UserDetailsPage() {
             </h2>
 
             {qrs.length === 0 ? (
-              <p className="text-gray-500">No linked QR codes.</p>
+              <p className="text-gray-500">No QR codes linked.</p>
             ) : (
               <ul className="space-y-3">
                 {qrs.map((qr) => (
@@ -157,9 +259,7 @@ export default function UserDetailsPage() {
                     <div className="flex gap-3">
                       <button
                         className="px-3 py-1 border rounded"
-                        onClick={() =>
-                          router.push(`/admin/qr/${qr.code}`)
-                        }
+                        onClick={() => router.push(`/admin/qr/${qr.code}`)}
                       >
                         Open
                       </button>
