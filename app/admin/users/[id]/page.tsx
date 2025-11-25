@@ -31,7 +31,7 @@ export default function UserDetailsPage() {
 
     (async () => {
       try {
-        // 1) Get users
+        // 1) Get all users
         const usersRes = await api.get("/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -55,7 +55,7 @@ export default function UserDetailsPage() {
 
         setAllQrs(qrRes.data);
 
-        // Filter linked QR codes
+        // Filter only linked QR codes
         setQrs(qrRes.data.filter((qr: any) => qr.userId?._id === userId));
 
       } catch (err) {
@@ -90,22 +90,12 @@ export default function UserDetailsPage() {
     const token = localStorage.getItem("admin-token");
 
     const res = await api.post(
-      "/admin/qrs/create",
+      `/admin/users/${userId}/qrs`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    const createdQR = res.data.qr;
-
-    // Link it
-    await api.patch(
-      `/admin/qrs/${createdQR.code}/unlink`,
-      { userId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    alert("QR Created & Linked!");
-
+    alert("QR Created & Linked: " + res.data.qr.code);
     router.refresh();
   };
 
@@ -113,18 +103,17 @@ export default function UserDetailsPage() {
   // LINK EXISTING QR TO USER
   // ========================
   const linkExistingQR = async () => {
-    if (!selectedQR) return alert("Select QR first");
+    if (!selectedQR) return alert("Please select a QR code");
 
     const token = localStorage.getItem("admin-token");
 
     await api.patch(
-      `/admin/qrs/${selectedQR}/unlink`,
-      { userId },
+      `/admin/users/${userId}/qrs/link`,
+      { code: selectedQR },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     alert("QR Linked!");
-
     router.refresh();
   };
 
@@ -161,10 +150,13 @@ export default function UserDetailsPage() {
   // ========================
   // RENDER
   // ========================
-  if (loading) return <p className="text-center mt-20">Loading user...</p>;
+  if (loading) return (
+    <p className="text-center mt-20">Loading user...</p>
+  );
 
-  if (!user)
-    return <p className="text-center text-red-600 mt-20">User not found</p>;
+  if (!user) return (
+    <p className="text-center text-red-600 mt-20">User not found</p>
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -260,10 +252,13 @@ export default function UserDetailsPage() {
 
           {/* QR SECTION */}
           <div className="bg-white p-5 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-3">QR Codes ({qrs.length})</h2>
+            <h2 className="text-xl font-semibold mb-3">
+              QR Codes ({qrs.length})
+            </h2>
 
-            {/* CREATE + LINK SECTION */}
+            {/* Create + Link */}
             <div className="flex gap-3 mb-4">
+
               <button
                 onClick={createQRForUser}
                 className="px-4 py-2 bg-blue-600 text-white rounded"
@@ -277,13 +272,11 @@ export default function UserDetailsPage() {
                 onChange={(e) => setSelectedQR(e.target.value)}
               >
                 <option value="">Select QR to Link</option>
-                {allQrs
-                  .filter((qr) => !qr.userId)
-                  .map((qr) => (
-                    <option key={qr.code} value={qr.code}>
-                      {qr.code}
-                    </option>
-                  ))}
+                {allQrs.filter((qr) => !qr.userId).map((qr) => (
+                  <option key={qr.code} value={qr.code}>
+                    {qr.code}
+                  </option>
+                ))}
               </select>
 
               <button
