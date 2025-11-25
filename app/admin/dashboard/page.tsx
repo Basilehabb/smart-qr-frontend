@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import AdminSidebar from "../AdminSidebar";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -52,68 +53,77 @@ export default function AdminDashboard() {
   if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
 
   return (
-    <div className="min-h-screen p-6 bg-gray-100">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="flex min-h-screen bg-gray-100">
 
-        {/* Title */}
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+      {/* Sidebar Fixed */}
+      <AdminSidebar />
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card title="Users" value={overview.totalUsers} />
-          <Card title="QR Codes" value={overview.totalQRs} />
-          <Card title="Linked QR" value={overview.linkedQRs} />
-          <Card title="Total Scans" value={overview.totalScans} />
-        </div>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 p-6">
 
-        {/* Latest Users */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between mb-3">
-            <h2 className="text-lg font-semibold">Latest Users</h2>
-            <button
-              onClick={() => router.push("/admin/users")}
-              className="text-blue-600 underline"
-            >
-              View All
-            </button>
+        <div className="max-w-5xl mx-auto space-y-6">
+
+          {/* Title */}
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+
+          {/* Overview Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card title="Users" value={overview.totalUsers} />
+            <Card title="QR Codes" value={overview.totalQRs} />
+            <Card title="Linked QR" value={overview.linkedQRs} />
+            <Card title="Total Scans" value={overview.totalScans} />
           </div>
 
-          {latestUsers.length === 0 ? (
-            <p className="text-gray-500">No users found.</p>
-          ) : (
-            <ul>
-              {latestUsers.map((u) => (
-                <li key={u._id} className="py-2 border-b last:border-none">
-                  {u.name} – {u.email}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          {/* Latest Users */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex justify-between mb-3">
+              <h2 className="text-lg font-semibold">Latest Users</h2>
+              <button
+                onClick={() => router.push("/admin/users")}
+                className="text-blue-600 underline"
+              >
+                View All
+              </button>
+            </div>
 
-        {/* Latest QRs */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between mb-3">
-            <h2 className="text-lg font-semibold">Latest QR Codes</h2>
-            <button
-              onClick={() => router.push("/admin/qrs")}
-              className="text-blue-600 underline"
-            >
-              View All
-            </button>
+            {latestUsers.length === 0 ? (
+              <p className="text-gray-500">No users found.</p>
+            ) : (
+              <ul>
+                {latestUsers.map((u) => (
+                  <li key={u._id} className="py-2 border-b last:border-none">
+                    {u.name} – {u.email}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          {latestQRs.length === 0 ? (
-            <p className="text-gray-500">No QR codes found.</p>
-          ) : (
-            <ul>
-              {latestQRs.map((qr) => (
-                <li key={qr.code} className="py-2 border-b last:border-none">
-                  {qr.code} {qr.userId ? "(linked)" : "(unlinked)"}
-                </li>
-              ))}
-            </ul>
-          )}
+          {/* Latest QRs */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex justify-between mb-3">
+              <h2 className="text-lg font-semibold">Latest QR Codes</h2>
+              <button
+                onClick={() => router.push("/admin/qrs")}
+                className="text-blue-600 underline"
+              >
+                View All
+              </button>
+            </div>
+
+            {latestQRs.length === 0 ? (
+              <p className="text-gray-500">No QR codes found.</p>
+            ) : (
+              <ul>
+                {latestQRs.map((qr) => (
+                  <li key={qr.code} className="py-2 border-b last:border-none">
+                    {qr.code} {qr.userId ? "(linked)" : "(unlinked)"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
         </div>
 
       </div>
