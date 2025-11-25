@@ -12,6 +12,7 @@ export default function UserDetailsPage() {
 
   const [user, setUser] = useState<any>(null);
   const [qrs, setQrs] = useState<any[]>([]);
+  const [allQrs, setAllQrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -22,28 +23,21 @@ export default function UserDetailsPage() {
     job: "",
   });
 
+  const [selectedQR, setSelectedQR] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("admin-token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    if (!token) return router.push("/login");
 
     (async () => {
       try {
-        // Fetch all users → find specific one
+        // 1) Get users
         const usersRes = await api.get("/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const foundUser = usersRes.data.users.find(
-          (u: any) => u._id === userId
-        );
-
-        if (!foundUser) {
-          router.push("/admin/users");
-          return;
-        }
+        const foundUser = usersRes.data.users.find((u: any) => u._id === userId);
+        if (!foundUser) return router.push("/admin/users");
 
         setUser(foundUser);
 
@@ -54,16 +48,16 @@ export default function UserDetailsPage() {
           job: foundUser.job || "",
         });
 
-        // Fetch QR codes linked to user
+        // 2) Get all QR codes
         const qrRes = await api.get("/admin/qrs", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const linked = qrRes.data.filter(
-          (qr: any) => qr.userId?._id === userId
-        );
+        setAllQrs(qrRes.data);
 
-        setQrs(linked);
+        // Filter linked QR codes
+        setQrs(qrRes.data.filter((qr: any) => qr.userId?._id === userId));
+
       } catch (err) {
         console.error(err);
         router.push("/admin/dashboard");
@@ -79,16 +73,59 @@ export default function UserDetailsPage() {
   const saveUser = async () => {
     const token = localStorage.getItem("admin-token");
 
-    await api.patch(
-      `/admin/users/${userId}`,
-      editData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    await api.patch(`/admin/users/${userId}`, editData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     alert("User updated successfully");
 
     setUser({ ...user, ...editData });
     setIsEditing(false);
+  };
+
+  // ========================
+  // CREATE NEW QR FOR USER
+  // ========================
+  const createQRForUser = async () => {
+    const token = localStorage.getItem("admin-token");
+
+    const res = await api.post(
+      "/admin/qrs/create",
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const createdQR = res.data.qr;
+
+    // Link it
+    await api.patch(
+      `/admin/qrs/${createdQR.code}/unlink`,
+      { userId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("QR Created & Linked!");
+
+    router.refresh();
+  };
+
+  // ========================
+  // LINK EXISTING QR TO USER
+  // ========================
+  const linkExistingQR = async () => {
+    if (!selectedQR) return alert("Select QR first");
+
+    const token = localStorage.getItem("admin-token");
+
+    await api.patch(
+      `/admin/qrs/${selectedQR}/unlink`,
+      { userId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("QR Linked!");
+
+    router.refresh();
   };
 
   // ========================
@@ -109,8 +146,7 @@ export default function UserDetailsPage() {
   // DELETE USER
   // ========================
   const deleteUser = async () => {
-    const confirmed = confirm("Are you sure you want to delete this user?");
-    if (!confirmed) return;
+    if (!confirm("Are you sure?")) return;
 
     const token = localStorage.getItem("admin-token");
 
@@ -125,29 +161,21 @@ export default function UserDetailsPage() {
   // ========================
   // RENDER
   // ========================
-  if (loading)
-    return <p className="text-center mt-20">Loading user...</p>;
+  if (loading) return <p className="text-center mt-20">Loading user...</p>;
 
   if (!user)
-    return (
-      <p className="text-center text-red-600 mt-20">
-        User not found
-      </p>
-    );
+    return <p className="text-center text-red-600 mt-20">User not found</p>;
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <AdminSidebar />
 
-      {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
 
           {/* HEADER */}
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">User: {user.name}</h1>
-
             <button
               className="text-blue-600 underline"
               onClick={() => router.push("/admin/users")}
@@ -189,28 +217,24 @@ export default function UserDetailsPage() {
               <>
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Name"
                   value={editData.name}
                   onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Email"
                   value={editData.email}
                   onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Phone"
                   value={editData.phone}
                   onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Job"
                   value={editData.job}
                   onChange={(e) => setEditData({ ...editData, job: e.target.value })}
                 />
@@ -234,12 +258,43 @@ export default function UserDetailsPage() {
             )}
           </div>
 
-          {/* QR LIST */}
+          {/* QR SECTION */}
           <div className="bg-white p-5 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-3">
-              Linked QR Codes ({qrs.length})
-            </h2>
+            <h2 className="text-xl font-semibold mb-3">QR Codes ({qrs.length})</h2>
 
+            {/* CREATE + LINK SECTION */}
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={createQRForUser}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Create QR for this User
+              </button>
+
+              <select
+                className="border px-3 py-2 rounded"
+                value={selectedQR}
+                onChange={(e) => setSelectedQR(e.target.value)}
+              >
+                <option value="">Select QR to Link</option>
+                {allQrs
+                  .filter((qr) => !qr.userId)
+                  .map((qr) => (
+                    <option key={qr.code} value={qr.code}>
+                      {qr.code}
+                    </option>
+                  ))}
+              </select>
+
+              <button
+                onClick={linkExistingQR}
+                className="px-3 py-2 bg-green-600 text-white rounded"
+              >
+                Link
+              </button>
+            </div>
+
+            {/* QR LIST */}
             {qrs.length === 0 ? (
               <p className="text-gray-500">No QR codes linked.</p>
             ) : (
