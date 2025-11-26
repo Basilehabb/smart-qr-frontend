@@ -18,12 +18,15 @@ export default function EditProfilePage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  // Load user data
+  // =========================
+  // Load User Data
+  // =========================
   useEffect(() => {
     const token = localStorage.getItem("user-token");
 
-    // المستخدم مش لوجين → نرجع return-url لصفحة edit نفسها
     if (!token) {
+      // المستخدم مش عامل Login → لازم نرجع هنا بعد login
+      localStorage.setItem("return-url", "/user/edit");
       router.push("/login");
       return;
     }
@@ -47,39 +50,41 @@ export default function EditProfilePage() {
     })();
   }, []);
 
-  // Return to QR
-  const getQRDetails = async () => {
+  // =========================
+  // CANCEL → return to QR
+  // =========================
+  const goBackToQR = async () => {
     const token = localStorage.getItem("user-token");
-  
+
     if (!token) {
       localStorage.setItem("return-url", "/user/edit");
       router.push("/login");
       return;
     }
-  
+
     const res = await api.get("/qr/my", {
       headers: { Authorization: `Bearer ${token}` },
     });
-  
+
     const codes = res.data.codes;
-  
-    // مفيش QR مربوط
+
     if (!codes || codes.length === 0) {
       router.push("/");
       return;
     }
-  
-    // أول QR
-    const code = codes[0];
-    router.push(`/qr/${code}`);
+
+    router.push(`/qr/${codes[0]}`);
   };
-  
+
+  // =========================
+  // SAVE PROFILE
+  // =========================
   const saveProfile = async () => {
     try {
       setError(null);
-  
+
       const token = localStorage.getItem("user-token");
-  
+
       await api.put(
         "/auth/update",
         {
@@ -89,30 +94,31 @@ export default function EditProfilePage() {
           job,
           password: password || undefined,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-  
-      // بعد التعديل نرجع للـ QR الصحيح فقط
+
+      // بعد التعديل → لازم نجيب الـ QR ونرجع له
       const res2 = await api.get("/qr/my", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       const codes = res2.data.codes;
+
       if (!codes || codes.length === 0) {
         router.push("/");
         return;
       }
-  
+
       router.push(`/qr/${codes[0]}`);
-  
+
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to update profile");
     }
   };
-  
 
+  // =========================
+  // RENDER
+  // =========================
   if (loading) return <p className="text-center mt-10">Loading...</p>;
   if (!user) return null;
 
@@ -168,7 +174,7 @@ export default function EditProfilePage() {
 
         <button
           className="border w-full py-2 rounded mt-3"
-          onClick={getQRDetails}
+          onClick={goBackToQR}
         >
           Cancel
         </button>
