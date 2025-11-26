@@ -12,6 +12,7 @@ export default function UserDetailsPage() {
 
   const [user, setUser] = useState<any>(null);
   const [qrs, setQrs] = useState<any[]>([]);
+  const [allQrs, setAllQrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -22,28 +23,21 @@ export default function UserDetailsPage() {
     job: "",
   });
 
+  const [selectedQR, setSelectedQR] = useState("");
+
   useEffect(() => {
     const token = localStorage.getItem("admin-token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    if (!token) return router.push("/login");
 
     (async () => {
       try {
-        // Fetch all users → find specific one
+        // 1) get users
         const usersRes = await api.get("/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const foundUser = usersRes.data.users.find(
-          (u: any) => u._id === userId
-        );
-
-        if (!foundUser) {
-          router.push("/admin/users");
-          return;
-        }
+        const foundUser = usersRes.data.users.find((u: any) => u._id === userId);
+        if (!foundUser) return router.push("/admin/users");
 
         setUser(foundUser);
 
@@ -54,18 +48,16 @@ export default function UserDetailsPage() {
           job: foundUser.job || "",
         });
 
-        // Fetch QR codes linked to user
+        // 2) get ALL qrs
         const qrRes = await api.get("/admin/qrs", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const linked = qrRes.data.filter(
-          (qr: any) => qr.userId?._id === userId
-        );
+        setAllQrs(qrRes.data);
 
-        setQrs(linked);
-      } catch (err) {
-        console.error(err);
+        // filter linked
+        setQrs(qrRes.data.filter((qr: any) => qr.userId?._id === userId));
+      } catch {
         router.push("/admin/dashboard");
       } finally {
         setLoading(false);
@@ -79,16 +71,48 @@ export default function UserDetailsPage() {
   const saveUser = async () => {
     const token = localStorage.getItem("admin-token");
 
-    await api.patch(
-      `/admin/users/${userId}`,
-      editData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    await api.patch(`/admin/users/${userId}`, editData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     alert("User updated successfully");
 
     setUser({ ...user, ...editData });
     setIsEditing(false);
+  };
+
+  // ========================
+  // CREATE NEW QR FOR USER
+  // ========================
+  const createQRForUser = async () => {
+    const token = localStorage.getItem("admin-token");
+
+    const res = await api.post(
+      `/admin/users/${userId}/qrs`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("QR Created & Linked: " + res.data.qr.code);
+    router.refresh();
+  };
+
+  // ========================
+  // LINK EXISTING QR TO USER
+  // ========================
+  const linkExistingQR = async () => {
+    if (!selectedQR) return alert("Select a QR");
+
+    const token = localStorage.getItem("admin-token");
+
+    await api.patch(
+      `/admin/users/${userId}/qrs/link`,
+      { code: selectedQR },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("QR Linked!");
+    router.refresh();
   };
 
   // ========================
@@ -109,8 +133,7 @@ export default function UserDetailsPage() {
   // DELETE USER
   // ========================
   const deleteUser = async () => {
-    const confirmed = confirm("Are you sure you want to delete this user?");
-    if (!confirmed) return;
+    if (!confirm("Are you sure?")) return;
 
     const token = localStorage.getItem("admin-token");
 
@@ -123,20 +146,20 @@ export default function UserDetailsPage() {
   };
 
   // ========================
-  // reset password
+  // RESET PASSWORD
   // ========================
   const resetPassword = async () => {
     const token = localStorage.getItem("admin-token");
-  
+
     const res = await api.post(
       `/admin/users/${userId}/reset-password`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-  
+
     alert("Temporary Password: " + res.data.tempPassword);
   };
-  
+
   // ========================
   // RENDER
   // ========================
@@ -152,10 +175,8 @@ export default function UserDetailsPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <AdminSidebar />
 
-      {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
 
@@ -200,7 +221,6 @@ export default function UserDetailsPage() {
                   Reset Password
                 </button>
 
-
                 <button
                   className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
                   onClick={deleteUser}
@@ -212,28 +232,24 @@ export default function UserDetailsPage() {
               <>
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Name"
                   value={editData.name}
                   onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Email"
                   value={editData.email}
                   onChange={(e) => setEditData({ ...editData, email: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Phone"
                   value={editData.phone}
                   onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
                 />
 
                 <input
                   className="border px-3 py-2 rounded w-full mb-3"
-                  placeholder="Job"
                   value={editData.job}
                   onChange={(e) => setEditData({ ...editData, job: e.target.value })}
                 />
@@ -257,12 +273,46 @@ export default function UserDetailsPage() {
             )}
           </div>
 
-          {/* QR LIST */}
+          {/* QR SECTION */}
           <div className="bg-white p-5 rounded-lg shadow">
+
             <h2 className="text-xl font-semibold mb-3">
               Linked QR Codes ({qrs.length})
             </h2>
 
+            {/* Create + Link */}
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={createQRForUser}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Create QR for this User
+              </button>
+
+              <select
+                className="border px-3 py-2 rounded"
+                value={selectedQR}
+                onChange={(e) => setSelectedQR(e.target.value)}
+              >
+                <option value="">Select QR to Link</option>
+                {allQrs
+                  .filter((qr) => !qr.userId)
+                  .map((qr) => (
+                    <option key={qr.code} value={qr.code}>
+                      {qr.code}
+                    </option>
+                  ))}
+              </select>
+
+              <button
+                onClick={linkExistingQR}
+                className="px-3 py-2 bg-green-600 text-white rounded"
+              >
+                Link
+              </button>
+            </div>
+
+            {/* QR LIST */}
             {qrs.length === 0 ? (
               <p className="text-gray-500">No QR codes linked.</p>
             ) : (
@@ -298,8 +348,8 @@ export default function UserDetailsPage() {
                 ))}
               </ul>
             )}
-          </div>
 
+          </div>
         </div>
       </div>
     </div>
