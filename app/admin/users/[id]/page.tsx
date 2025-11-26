@@ -12,7 +12,6 @@ export default function UserDetailsPage() {
 
   const [user, setUser] = useState<any>(null);
   const [qrs, setQrs] = useState<any[]>([]);
-  const [allQrs, setAllQrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -23,20 +22,28 @@ export default function UserDetailsPage() {
     job: "",
   });
 
-  const [selectedQR, setSelectedQR] = useState("");
-
   useEffect(() => {
     const token = localStorage.getItem("admin-token");
-    if (!token) return router.push("/login");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
     (async () => {
       try {
+        // Fetch all users → find specific one
         const usersRes = await api.get("/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const foundUser = usersRes.data.users.find((u: any) => u._id === userId);
-        if (!foundUser) return router.push("/admin/users");
+        const foundUser = usersRes.data.users.find(
+          (u: any) => u._id === userId
+        );
+
+        if (!foundUser) {
+          router.push("/admin/users");
+          return;
+        }
 
         setUser(foundUser);
 
@@ -47,14 +54,16 @@ export default function UserDetailsPage() {
           job: foundUser.job || "",
         });
 
+        // Fetch QR codes linked to user
         const qrRes = await api.get("/admin/qrs", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        setAllQrs(qrRes.data);
+        const linked = qrRes.data.filter(
+          (qr: any) => qr.userId?._id === userId
+        );
 
-        setQrs(qrRes.data.filter((qr: any) => qr.userId?._id === userId));
-
+        setQrs(linked);
       } catch (err) {
         console.error(err);
         router.push("/admin/dashboard");
@@ -64,12 +73,17 @@ export default function UserDetailsPage() {
     })();
   }, [router, userId]);
 
+  // ========================
+  // UPDATE USER
+  // ========================
   const saveUser = async () => {
     const token = localStorage.getItem("admin-token");
 
-    await api.patch(`/admin/users/${userId}`, editData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await api.patch(
+      `/admin/users/${userId}`,
+      editData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
     alert("User updated successfully");
 
@@ -77,34 +91,9 @@ export default function UserDetailsPage() {
     setIsEditing(false);
   };
 
-  const createQRForUser = async () => {
-    const token = localStorage.getItem("admin-token");
-
-    const res = await api.post(
-      `/admin/users/${userId}/qrs`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    alert("QR Created & Linked: " + res.data.qr.code);
-    router.refresh();
-  };
-
-  const linkExistingQR = async () => {
-    if (!selectedQR) return alert("Please select a QR code");
-
-    const token = localStorage.getItem("admin-token");
-
-    await api.patch(
-      `/admin/users/${userId}/qrs/link`,
-      { code: selectedQR },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    alert("QR Linked!");
-    router.refresh();
-  };
-
+  // ========================
+  // UNLINK QR
+  // ========================
   const unlinkQR = async (code: string) => {
     const token = localStorage.getItem("admin-token");
 
@@ -116,8 +105,12 @@ export default function UserDetailsPage() {
     router.refresh();
   };
 
+  // ========================
+  // DELETE USER
+  // ========================
   const deleteUser = async () => {
-    if (!confirm("Are you sure?")) return;
+    const confirmed = confirm("Are you sure you want to delete this user?");
+    if (!confirmed) return;
 
     const token = localStorage.getItem("admin-token");
 
@@ -129,36 +122,47 @@ export default function UserDetailsPage() {
     router.push("/admin/users");
   };
 
-  // 🚀 ADD — Reset Password
+  // ========================
+  // reset password
+  // ========================
   const resetPassword = async () => {
     const token = localStorage.getItem("admin-token");
-
+  
     const res = await api.post(
       `/admin/users/${userId}/reset-password`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-
+  
     alert("Temporary Password: " + res.data.tempPassword);
   };
-
+  
+  // ========================
+  // RENDER
+  // ========================
   if (loading)
     return <p className="text-center mt-20">Loading user...</p>;
 
   if (!user)
     return (
-      <p className="text-center text-red-600 mt-20">User not found</p>
+      <p className="text-center text-red-600 mt-20">
+        User not found
+      </p>
     );
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
       <AdminSidebar />
 
+      {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="max-w-4xl mx-auto space-y-6">
 
+          {/* HEADER */}
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">User: {user.name}</h1>
+
             <button
               className="text-blue-600 underline"
               onClick={() => router.push("/admin/users")}
@@ -167,6 +171,7 @@ export default function UserDetailsPage() {
             </button>
           </div>
 
+          {/* USER CARD */}
           <div className="bg-white p-5 rounded-lg shadow">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-semibold">User Details</h2>
@@ -188,13 +193,13 @@ export default function UserDetailsPage() {
                 {user.phone && <p><b>Phone:</b> {user.phone}</p>}
                 {user.job && <p><b>Job:</b> {user.job}</p>}
 
-                {/* RESET PASSWORD BUTTON */}
                 <button
                   className="mt-3 px-4 py-2 bg-purple-600 text-white rounded"
                   onClick={resetPassword}
                 >
                   Reset Password
                 </button>
+
 
                 <button
                   className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
@@ -205,12 +210,96 @@ export default function UserDetailsPage() {
               </>
             ) : (
               <>
-                {/* Editing form unchanged */}
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Phone"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                />
+
+                <input
+                  className="border px-3 py-2 rounded w-full mb-3"
+                  placeholder="Job"
+                  value={editData.job}
+                  onChange={(e) => setEditData({ ...editData, job: e.target.value })}
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded"
+                    onClick={saveUser}
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    className="px-4 py-2 border rounded"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </>
             )}
           </div>
 
-          {/* QR SECTION — unchanged */}
+          {/* QR LIST */}
+          <div className="bg-white p-5 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-3">
+              Linked QR Codes ({qrs.length})
+            </h2>
+
+            {qrs.length === 0 ? (
+              <p className="text-gray-500">No QR codes linked.</p>
+            ) : (
+              <ul className="space-y-3">
+                {qrs.map((qr) => (
+                  <li
+                    key={qr.code}
+                    className="p-3 border rounded flex justify-between items-center bg-gray-50"
+                  >
+                    <div>
+                      <p className="font-medium">{qr.code}</p>
+                      <p className="text-xs text-gray-500">
+                        Created: {new Date(qr.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        className="px-3 py-1 border rounded"
+                        onClick={() => router.push(`/admin/qr/${qr.code}`)}
+                      >
+                        Open
+                      </button>
+
+                      <button
+                        className="px-3 py-1 bg-yellow-500 text-white rounded"
+                        onClick={() => unlinkQR(qr.code)}
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
