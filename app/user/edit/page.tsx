@@ -2,15 +2,27 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api"; // <-- عندك هذا الملف حسب كلامك
-import { ExternalLink } from "lucide-react"; // optional icon (install if missing) or remove
+import { api } from "@/lib/api"; // إذا مش موجود على السيرفر سيستخدم fallback
+import { ExternalLink } from "lucide-react";
 
+/**
+ * Clean, ready-to-use edit profile page
+ * - Fallback platforms if /fields fails
+ * - Country code select + phone preview
+ * - Upload profile image (client preview)
+ * - Links preview show platform title (not raw url)
+ * - Responsive layout
+ */
+
+/* ---------------------------
+   Types
+   --------------------------- */
 type Platform = {
-  id: string; // unique id e.g. "whatsapp"
-  title: string; // display name
-  category?: string; // social/contact/payment/other
+  id: string;
+  title: string;
+  category?: string;
   requires?: "phone" | "url" | "text" | null;
-  template?: string | null; // e.g. "https://wa.me/{PHONE}"
+  template?: string | null; // e.g. https://wa.me/{PHONE} or https://x.com/{VALUE}
   icon?: string | null;
 };
 
@@ -36,15 +48,34 @@ const EMPTY_PROFILE: ProfileSections = {
   other: {},
 };
 
+/* ---------------------------
+   Fallback platforms (if API not available)
+   --------------------------- */
+const FALLBACK_PLATFORMS: Platform[] = [
+  { id: "whatsapp", title: "WhatsApp", category: "Communication", requires: "phone", template: "https://wa.me/{PHONE}" },
+  { id: "instagram", title: "Instagram", category: "Social", requires: "text", template: "https://instagram.com/{VALUE}" },
+  { id: "facebook", title: "Facebook", category: "Social", requires: "url", template: "https://facebook.com/{VALUE}" },
+  { id: "tiktok", title: "TikTok", category: "Social", requires: "text", template: "https://tiktok.com/@{VALUE}" },
+  { id: "website", title: "Website", category: "Other", requires: "url" },
+  { id: "phone", title: "Phone", category: "Contact", requires: "phone" },
+  { id: "email", title: "Email", category: "Contact", requires: "text" },
+];
 
+/* ---------------------------
+   Component
+   --------------------------- */
 export default function EditProfilePage() {
   // basic user info
   const [user, setUser] = useState<any | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+20"); // default Egypt
   const [job, setJob] = useState("");
   const [password, setPassword] = useState("");
+
+  // avatar (data URL preview)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // profile sections
   const [profile, setProfile] = useState<ProfileSections>(EMPTY_PROFILE);
@@ -61,10 +92,9 @@ export default function EditProfilePage() {
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  // drag
+  // drag ref
   const dragItem = useRef<{ section: keyof ProfileSections; key: string } | null>(null);
 
-  // sections list (for tabs + preview)
   const sections = [
     { key: "social" as keyof ProfileSections, title: "Social" },
     { key: "contact" as keyof ProfileSections, title: "Contact" },
@@ -80,35 +110,48 @@ export default function EditProfilePage() {
     (async () => {
       try {
         setLoading(true);
-        // fetch dynamic platforms
-        const pf = await api.get("/fields");
-        // backend should return { platforms: [...] }
-        setPlatforms(pf.data.platforms || []);
-
-        // fetch current user
-        const token = localStorage.getItem("user-token");
-        if (!token) {
-          // redirect to login (simple fallback)
-          window.location.href = "/login";
-          return;
+        // try to fetch platforms from backend, fall back if not available
+        try {
+          const pf = await api.get("/fields");
+          setPlatforms(pf?.data?.platforms || FALLBACK_PLATFORMS);
+        } catch (innerErr) {
+          console.warn("Failed to load /fields, using fallback platforms", innerErr);
+          setPlatforms(FALLBACK_PLATFORMS);
         }
-        const res = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
-        const u = res.data.user;
-        setUser(u);
-        setName(u.name || "");
-        setEmail(u.email || "");
-        setPhone(u.phone || "");
-        setJob(u.job || "");
-        setProfile({
-          social: u.profile?.social || {},
-          contact: u.profile?.contact || {},
-          payment: u.profile?.payment || {},
-          video: u.profile?.video || {},
-          music: u.profile?.music || {},
-          design: u.profile?.design || {},
-          gaming: u.profile?.gaming || {},
-          other: u.profile?.other || {},
-        });
+
+        // fetch current user (if you have /auth/me)
+        try {
+          const token = localStorage.getItem("user-token");
+          if (!token) {
+            // no token -> keep defaults (you can redirect)
+            setLoading(false);
+            return;
+          }
+          const res = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+          const u = res.data.user;
+          if (u) {
+            setUser(u);
+            setName(u.name || "");
+            setEmail(u.email || "");
+            setPhone(u.phone || "");
+            setJob(u.job || "");
+            setAvatarUrl(u.avatar || null);
+            setProfile({
+              social: u.profile?.social || {},
+              contact: u.profile?.contact || {},
+              payment: u.profile?.payment || {},
+              video: u.profile?.video || {},
+              music: u.profile?.music || {},
+              design: u.profile?.design || {},
+              gaming: u.profile?.gaming || {},
+              other: u.profile?.other || {},
+            });
+            if (u.countryCode) setCountryCode(u.countryCode);
+          }
+        } catch (meErr) {
+          // it's acceptable to continue without user
+          console.warn("Failed to fetch /auth/me", meErr);
+        }
       } catch (err) {
         console.error(err);
         setError("Failed to load data");
@@ -118,9 +161,9 @@ export default function EditProfilePage() {
     })();
   }, []);
 
-  // =========================
-  // Validation / helpers
-  // =========================
+  /* ---------------------------
+     Helpers / Validation
+     --------------------------- */
   function isEmail(v: string) {
     return /\S+@\S+\.\S+/.test(v);
   }
@@ -133,17 +176,19 @@ export default function EditProfilePage() {
     }
   }
   function isPhone(v: string) {
-    // simple phone validation: digits only (allow +)
+    // allow + and digits, minimal len
     return /^[+\d][\d\s\-()]{5,}$/.test(v);
   }
 
   function generateLink(platform: Platform, value: string) {
     if (!platform || !value) return value;
     if (platform.template) {
-      return platform.template.replace("{PHONE}", value.replace(/\D/g, "")).replace("{VALUE}", encodeURIComponent(value));
+      return platform.template
+        .replace("{PHONE}", value.replace(/\D/g, ""))
+        .replace("{VALUE}", encodeURIComponent(value));
     }
 
-    // default generators:
+    // defaults:
     if (platform.id === "whatsapp") {
       const digits = value.replace(/\D/g, "");
       return `https://wa.me/${digits}`;
@@ -156,18 +201,18 @@ export default function EditProfilePage() {
       if (/^https?:\/\//.test(value)) return value;
       return `https://${value}`;
     }
-
     return value;
   }
 
-  // Add field to profile under its category
+  /* ---------------------------
+     Add / Delete / Drag handlers
+     --------------------------- */
   function addPlatformToProfile(platformId: string, rawValue: string) {
     const platform = platforms.find((p) => p.id === platformId);
     if (!platform) return;
 
     const category = (platform.category || "other") as keyof ProfileSections;
-
-    const value = (platform.template || platform.requires) ? generateLink(platform, rawValue) : rawValue;
+    const value = platform.template || platform.requires ? generateLink(platform, rawValue) : rawValue;
 
     setProfile((prev) => ({
       ...prev,
@@ -175,7 +220,6 @@ export default function EditProfilePage() {
     }));
   }
 
-  // Delete field
   function deleteField(section: keyof ProfileSections, key: string) {
     setProfile((prev) => {
       const copy = { ...prev, [section]: { ...(prev as any)[section] } };
@@ -184,7 +228,6 @@ export default function EditProfilePage() {
     });
   }
 
-  // Drag handlers
   function handleDragStart(e: React.DragEvent, section: keyof ProfileSections, key: string) {
     dragItem.current = { section, key };
     e.dataTransfer.effectAllowed = "move";
@@ -198,19 +241,17 @@ export default function EditProfilePage() {
     const src = dragItem.current;
     const dst = { section, key };
     if (src.section !== dst.section) {
-      // move item from src.section to dst.section (append)
+      // move
       setProfile((prev) => {
         const srcCopy = { ...(prev as any)[src.section] };
         const val = srcCopy[src.key];
         delete srcCopy[src.key];
-
         const dstCopy = { ...(prev as any)[dst.section] };
         dstCopy[src.key] = val;
-
         return { ...prev, [src.section]: srcCopy, [dst.section]: dstCopy };
       });
     } else {
-      // reorder within same section: place before 'key' if key provided
+      // reorder
       setProfile((prev) => {
         const items = Object.entries((prev as any)[section]) as [string, string][];
         const from = items.findIndex(([k]) => k === src.key);
@@ -229,20 +270,20 @@ export default function EditProfilePage() {
     dragItem.current = null;
   }
 
-  // Save to backend
+  /* ---------------------------
+     Save profile
+     --------------------------- */
   async function saveProfile() {
     setError(null);
     setSaving(true);
 
-    // simple validation before sending
-    // validate email
+    // basic validations
     if (!isEmail(email)) {
       setError("Invalid email");
       setSaving(false);
       return;
     }
 
-    // validate all fields depending on platform requires
     for (const sec of Object.keys(profile) as (keyof ProfileSections)[]) {
       for (const [key, val] of Object.entries((profile as any)[sec]) as [string, string][]) {
         const plat = platforms.find((p) => p.id === key);
@@ -272,9 +313,10 @@ export default function EditProfilePage() {
         return;
       }
 
-      const payload: any = { name, email, phone, job, profile };
+      const payload: any = { name, email, phone, countryCode, job, profile, avatar: avatarUrl };
       if (password) payload.password = password;
 
+      // send to backend (api exists in your project)
       await api.put("/auth/update", payload, { headers: { Authorization: `Bearer ${token}` } });
 
       alert("Profile updated");
@@ -286,65 +328,110 @@ export default function EditProfilePage() {
     }
   }
 
+  /* ---------------------------
+     Avatar upload (client preview)
+     --------------------------- */
+  function onAvatarSelected(file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const url = String(e.target?.result || "");
+      setAvatarUrl(url);
+    };
+    reader.readAsDataURL(file);
+  }
+
   if (loading) return <div className="p-6">Loading…</div>;
 
+  /* ---------------------------
+     Render
+     --------------------------- */
   return (
     <div className="min-h-screen p-6 bg-slate-50">
-      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left: preview card */}
-        <div className="col-span-12 lg:col-span-3">
+        <div className="col-span-12 md:col-span-4 lg:col-span-3">
           <div className="bg-white rounded-xl shadow p-6">
-            <div className="rounded-lg overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 h-40 relative p-4 text-white">
-              <div className="text-3xl font-bold">{name ? name[0]?.toUpperCase() : "U"}</div>
+            <div className="relative rounded-lg overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 h-40 flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="avatar" className="absolute inset-0 w-full h-full object-cover opacity-95" />
+              ) : (
+                <div className="text-5xl font-bold text-white">{name ? name[0]?.toUpperCase() : "U"}</div>
+              )}
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 text-center">
               <h3 className="text-xl font-semibold">{name || "No name"}</h3>
-              <p className="text-sm text-gray-500">{email}</p>
+              <p className="text-sm text-gray-500 break-all">{email}</p>
+              <p className="text-sm text-gray-500 mt-1">{countryCode} {phone}</p>
             </div>
 
             <div className="mt-6 space-y-3">
-              {/* show icons + values for profile */}
+              {/* show icons + values for profile - grouped by section */}
               {sections.map((s) => {
-                const entries = Object.entries((profile as any)[s.key]);
-                return entries.length ? (
+                const entries = Object.entries((profile as any)[s.key]) as [string, string][];
+                if (!entries.length) return null;
+                return (
                   <div key={s.key}>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase">{s.title}</h4>
                     <div className="mt-2 space-y-1">
-                    {(Object.entries((profile as any)[s.key]) as [string, string][])
-                      .map(([k, v]) => (
-                        <div key={k} className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-                            •
+                      {entries.map(([k, v]) => {
+                        // display platform title if available
+                        const platInfo = platforms.find((p) => p.id === k);
+                        const displayTitle = platInfo?.title || k;
+                        return (
+                          <div key={k} className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">•</div>
+                            <a href={v} target="_blank" rel="noreferrer" className="text-sm text-gray-700 hover:underline break-all">
+                              {displayTitle}
+                            </a>
                           </div>
-                          <div className="text-sm text-gray-700 break-all">{String(v)}</div>
-                        </div>
-                    ))}
+                        );
+                      })}
                     </div>
                   </div>
-                ) : null;
+                );
               })}
             </div>
           </div>
         </div>
 
         {/* Center: Fields list (editor) */}
-        <div className="col-span-12 lg:col-span-6">
+        <div className="col-span-12 md:col-span-8 lg:col-span-6">
           <div className="bg-white rounded-xl shadow p-6 space-y-4">
             {/* Basic info */}
-            <div className="flex gap-3">
+            <div className="flex flex-col md:flex-row gap-3">
               <input className="flex-1 border rounded px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-              <input className="w-80 border rounded px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-              <input className="w-64 border rounded px-3 py-2" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
+              <input className="w-full md:w-80 border rounded px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+              <div className="flex items-center gap-2">
+                <select className="border rounded px-2 py-2" value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
+                  <option value="+20">🇪🇬 +20</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+966">🇸🇦 +966</option>
+                  <option value="+1">🇺🇸 +1</option>
+                </select>
+                <input className="w-48 border rounded px-3 py-2" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
+              </div>
             </div>
+
             <div className="flex gap-3">
               <input className="flex-1 border rounded px-3 py-2" value={job} onChange={(e) => setJob(e.target.value)} placeholder="Job / Title" />
               <input className="w-80 border rounded px-3 py-2" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password (optional)" type="password" />
-              <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-indigo-600 text-white rounded">+ Add Link</button>
+              <div>
+                <label className="cursor-pointer inline-block px-4 py-2 bg-indigo-600 text-white rounded">
+                  Upload avatar
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => onAvatarSelected(e.target.files?.[0])}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
             {/* tabs */}
-            <div className="flex gap-2 border-b pb-2">
+            <div className="flex gap-2 border-b pb-2 overflow-auto">
               {sections.map((s) => (
                 <button
                   key={s.key}
@@ -359,9 +446,9 @@ export default function EditProfilePage() {
             {/* Field editor */}
             <div className="bg-slate-50 p-4 rounded">
               <div className="space-y-3">
-                {Object.entries(profile[activeTab]).length === 0 && <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>}
+                {(Object.entries(profile[activeTab]) as [string, string][]).length === 0 && <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>}
 
-                {Object.entries(profile[activeTab]).map(([plat, val]) => {
+                {(Object.entries(profile[activeTab]) as [string, string][]).map(([plat, val]) => {
                   const platInfo = platforms.find((p) => p.id === plat);
                   const title = platInfo?.title || plat;
                   return (
@@ -373,12 +460,12 @@ export default function EditProfilePage() {
                       onDrop={(e) => handleDrop(e, activeTab, plat)}
                       className="p-3 bg-white rounded border flex items-start justify-between gap-3"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 w-full">
                         <div className="cursor-move text-slate-400 mt-1">≡</div>
-                        <div>
+                        <div className="flex-1">
                           <div className="text-sm font-semibold">{title}</div>
                           <input
-                            className="border rounded px-3 py-2 w-[420px]"
+                            className="border rounded px-3 py-2 w-full"
                             value={val}
                             onChange={(e) =>
                               setProfile((prev) => ({ ...prev, [activeTab]: { ...(prev as any)[activeTab], [plat]: e.target.value } }))
@@ -391,9 +478,7 @@ export default function EditProfilePage() {
                       <div className="flex items-center gap-2">
                         <button
                           title="Open"
-                          onClick={() => {
-                            window.open(val, "_blank");
-                          }}
+                          onClick={() => window.open(val, "_blank")}
                           className="p-2 border rounded"
                         >
                           <ExternalLink size={14} />
@@ -415,34 +500,37 @@ export default function EditProfilePage() {
 
             {error && <div className="text-red-600">{error}</div>}
 
-            <div className="flex justify-end gap-2">
-              <button onClick={() => window.location.href = "/"} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded">
-                {saving ? "Saving..." : "Save & Continue"}
-              </button>
+            <div className="flex justify-between items-center">
+              <div>
+                <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-violet-600 text-white rounded">+ Add Link</button>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded">Cancel</button>
+                <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded">
+                  {saving ? "Saving..." : "Save & Continue"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Fields library */}
-        <div className="col-span-12 lg:col-span-3">
+        {/* Right: Fields library (no search) */}
+        <div className="col-span-12 md:col-span-6 lg:col-span-3">
           <div className="bg-white rounded-xl shadow p-6">
             <h3 className="font-semibold mb-2">Fields</h3>
-            <input className="w-full border rounded px-3 py-2 mb-3" placeholder="Search platform" onChange={(e) => { /* optional search */ }} />
-
             <div className="space-y-2 max-h-[60vh] overflow-auto">
-              {/* group by category */}
               {["Most popular", "Social", "Communication", "Payment", "Other"].map((group) => {
-                const list = platforms.filter((p) => (p.category || "other").toLowerCase().includes(group.toLowerCase()) || group === "Most popular");
+                // simple grouping: we show first items for "Most popular"
+                const list = group === "Most popular" ? platforms.slice(0, 8) : platforms.filter((p) => (p.category || "other").toLowerCase().includes(group.toLowerCase()));
                 return (
                   <div key={group}>
                     <div className="text-xs text-gray-500 uppercase mb-2">{group}</div>
                     <div className="flex flex-wrap gap-2">
-                      {list.slice(0, 20).map((p) => (
+                      {list.map((p) => (
                         <button
                           key={p.id}
                           onClick={() => {
-                            // open add dialog preselected
                             setSelectedPlatform(p.id);
                             setSelectedValue("");
                             setShowAddDialog(true);
@@ -461,10 +549,10 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      {/* Add dialog (simple modal using fixed) */}
+      {/* Add dialog */}
       {showAddDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg w-[640px] p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-lg w-full max-w-xl p-6">
             <h3 className="text-lg font-semibold mb-4">Add Link</h3>
 
             <div className="mb-3">
@@ -488,16 +576,10 @@ export default function EditProfilePage() {
                   const plat = platforms.find((p) => p.id === selectedPlatform);
                   if (!plat) return alert("Invalid platform");
 
-                  // client-side validation before add
-                  if (plat.requires === "phone" && !isPhone(selectedValue)) {
-                    return alert("Please provide a valid phone number");
-                  }
-                  if (plat.requires === "url" && !isUrl(selectedValue)) {
-                    return alert("Please provide a valid URL (https://...)");
-                  }
-                  if (plat.requires === "text" && !selectedValue.trim()) {
-                    return alert("Value required");
-                  }
+                  // client-side validation
+                  if (plat.requires === "phone" && !isPhone(selectedValue)) return alert("Please provide a valid phone");
+                  if (plat.requires === "url" && !isUrl(selectedValue)) return alert("Please provide a valid URL (https://...)");
+                  if (plat.requires === "text" && !selectedValue.trim()) return alert("Value required");
 
                   addPlatformToProfile(selectedPlatform, selectedValue);
                   setShowAddDialog(false);
