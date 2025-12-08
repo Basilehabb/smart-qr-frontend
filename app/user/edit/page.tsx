@@ -407,10 +407,11 @@ export default function EditProfilePage() {
                   placeholder="Email"
                 />
 
-                {/* Phone + Country code */}
-                <div className="flex gap-2 w-full">
+                {/* PHONE ROW — fixed */}
+                <div className="grid grid-cols-3 gap-3 w-full"> 
+                  {/* Country Code */}
                   <select
-                    className="border rounded px-2 py-2"
+                    className="border rounded px-2 py-2 w-full"
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
                   >
@@ -420,8 +421,9 @@ export default function EditProfilePage() {
                     <option value="+1">🇺🇸 +1</option>
                   </select>
 
+                  {/* Phone */}
                   <input
-                    className="flex-1 border rounded px-3 py-2"
+                    className="border rounded px-3 py-2 w-full"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Phone"
@@ -429,7 +431,7 @@ export default function EditProfilePage() {
                 </div>
               </div>
 
-              {/* Job + Password + Avatar */}
+                  {/* Job + Password + Avatar */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                 <input
                   className="border rounded px-3 py-2 w-full"
@@ -446,12 +448,13 @@ export default function EditProfilePage() {
                   placeholder="New password (optional)"
                 />
 
+                  {/* Upload Avatar */}
                 <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
                   Upload avatar
                   <input
                     type="file"
-                    accept="image/*"
                     className="hidden"
+                    accept="image/*"
                     onChange={(e) => onAvatarChange(e.target.files?.[0])}
                   />
                 </label>
