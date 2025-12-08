@@ -408,8 +408,8 @@ export default function EditProfilePage() {
                 />
 
                 {/* PHONE ROW — fixed */}
-                <div className="grid grid-cols-3 gap-3 w-full"> 
-                  {/* Country Code */}
+                <div className="grid grid-cols-4 gap-3 w-full">
+                {/* Country Code */}
                   <select
                     className="border rounded px-2 py-2 w-full"
                     value={countryCode}
@@ -423,10 +423,10 @@ export default function EditProfilePage() {
 
                   {/* Phone */}
                   <input
-                    className="border rounded px-3 py-2 w-full"
+                    className="col-span-2 border rounded px-3 py-2 w-full"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Phone"
+                    placeholder="Phone number"
                   />
                 </div>
               </div>
