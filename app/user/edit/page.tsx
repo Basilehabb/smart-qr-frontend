@@ -405,31 +405,28 @@ export default function EditProfilePage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                 />
-                {/* PHONE FULL ROW */}
-                <div className="border rounded flex items-center px-2 py-2 w-full">
-                {/* Country Code */}
-                <select
-                  className="bg-transparent outline-none text-gray-600 mr-2"
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                >
-                  <option value="+20">+20 🇪🇬</option>
-                  <option value="+971">+971 🇦🇪</option>
-                  <option value="+966">+966 🇸🇦</option>
-                  <option value="+1">+1 🇺🇸</option>
-                </select>
+                {/* Phone Row */}
+                  <div className="flex gap-2 w-full">
+                    {/* Country Code */}
+                    <select
+                      className="border rounded px-2 py-2 w-24 text-sm"
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                    >
+                      <option value="+20">🇪🇬 +20</option>
+                      <option value="+971">🇦🇪 +971</option>
+                      <option value="+966">🇸🇦 +966</option>
+                      <option value="+1">🇺🇸 +1</option>
+                    </select>
 
-                {/* Divider Line */}
-                <div className="h-5 w-px bg-gray-300 mx-2"></div>
-
-                {/* Phone Number */}
-                <input
-                  className="flex-1 outline-none"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Phone number"
-                />
-              </div>
+                    {/* Phone */}
+                    <input
+                      className="border rounded px-3 py-2 text-sm flex-1"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Phone number"
+                    />
+                  </div>
 
                   {/* Job + Password + Avatar */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
@@ -447,9 +444,7 @@ export default function EditProfilePage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="New password (optional)"
-
                 />
-
                   {/* Upload Avatar */}
                 <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
                   Upload avatar
