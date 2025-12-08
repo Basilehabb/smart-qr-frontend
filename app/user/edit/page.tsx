@@ -399,26 +399,18 @@ export default function EditProfilePage() {
   
       setAvatarPreview(newUser.avatar || null);
   
-      // 4) Rebuild profile with normalized values
-      const normalize = (sec: any) => {
-        const out: Record<string, string> = {};
-        if (!sec) return out;
-        for (const k of Object.keys(sec)) {
-          out[k] = sec[k] == null ? "" : String(sec[k]);
-        }
-        return out;
-      };
-  
+      // 4) Rebuild profile EXACTLY as returned from backend (KEEP ORDER)
       setProfile({
-        social: normalize(newUser.profile.social),
-        contact: normalize(newUser.profile.contact),
-        payment: normalize(newUser.profile.payment),
-        video: normalize(newUser.profile.video),
-        music: normalize(newUser.profile.music),
-        design: normalize(newUser.profile.design),
-        gaming: normalize(newUser.profile.gaming),
-        other: normalize(newUser.profile.other),
+        social: newUser.profile.social || {},
+        contact: newUser.profile.contact || {},
+        payment: newUser.profile.payment || {},
+        video: newUser.profile.video || {},
+        music: newUser.profile.music || {},
+        design: newUser.profile.design || {},
+        gaming: newUser.profile.gaming || {},
+        other: newUser.profile.other || {},
       });
+
   
       // 5) Clear deleted buffer (safe now)
       setDeletedBuffer({});
