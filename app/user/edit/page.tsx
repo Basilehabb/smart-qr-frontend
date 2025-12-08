@@ -406,28 +406,29 @@ export default function EditProfilePage() {
                   placeholder="Email"
                 />
                 {/* PHONE FULL ROW */}
-                <div className="flex gap-2 w-full">
-
+                <div className="border rounded flex items-center px-2 py-2 w-full">
                 {/* Country Code */}
                 <select
-                  className="border rounded px-2 py-2 w-18 text-sm"
+                  className="bg-transparent outline-none text-gray-600 mr-2"
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                 >
-                  <option value="+20">🇪🇬 +20</option>
-                  <option value="+971">🇦🇪 +971</option>
-                  <option value="+966">🇸🇦 +966</option>
-                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+20">+20 🇪🇬</option>
+                  <option value="+971">+971 🇦🇪</option>
+                  <option value="+966">+966 🇸🇦</option>
+                  <option value="+1">+1 🇺🇸</option>
                 </select>
+
+                {/* Divider Line */}
+                <div className="h-5 w-px bg-gray-300 mx-2"></div>
 
                 {/* Phone Number */}
                 <input
-                  className="border rounded px-3 py-2 text-sm w-[110px]"
+                  className="flex-1 outline-none"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number"
                 />
-                </div>
               </div>
 
                   {/* Job + Password + Avatar */}
@@ -650,5 +651,6 @@ export default function EditProfilePage() {
         </div>
       )}
     </div>
+  </div>
   );
 }
