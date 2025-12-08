@@ -388,12 +388,13 @@ export default function EditProfilePage() {
         {/* Center Column – Editor */}
           <div className="col-span-12 md:col-span-8 lg:col-span-6">
             <div className="bg-white rounded-xl shadow p-6 space-y-4">
-
               {/* Basic Info Section */}
               <div className="space-y-4">
 
-                {/* Row 1 — Name + Email */}
+              {/* Row 1 — Name + Email + Phone */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                  {/* Name */}
                   <input
                     className="border rounded px-3 py-2 w-full"
                     value={name}
@@ -401,40 +402,40 @@ export default function EditProfilePage() {
                     placeholder="Full name"
                   />
 
+                  {/* Email */}
                   <input
                     className="border rounded px-3 py-2 w-full"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
                   />
+
+                  {/* Phone (with country code inside) */}
+                  <div className="relative w-full">
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      className="
+                        absolute left-2 top-1/2 -translate-y-1/2
+                        bg-transparent text-sm text-gray-600
+                        cursor-pointer pr-6 outline-none
+                      "
+                    >
+                      <option value="+20">🇪🇬 +20</option>
+                      <option value="+971">🇦🇪 +971</option>
+                      <option value="+966">🇸🇦 +966</option>
+                      <option value="+1">🇺🇸 +1</option>
+                    </select>
+
+                    <input
+                      className="border rounded px-3 py-2 pl-24 text-sm w-full"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Phone number"
+                    />
+                  </div>
                 </div>
-
-                {/* Row 2 — Phone with code inside input */}
-                <div className="relative w-full">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="
-                      absolute left-2 top-1/2 -translate-y-1/2
-                      bg-transparent text-sm text-gray-600 cursor-pointer
-                      pr-6 outline-none
-                    "
-                  >
-                    <option value="+20">🇪🇬 +20</option>
-                    <option value="+971">🇦🇪 +971</option>
-                    <option value="+966">🇸🇦 +966</option>
-                    <option value="+1">🇺🇸 +1</option>
-                  </select>
-
-                  <input
-                    className="border rounded px-3 py-2 w-full pl-24 text-sm"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Phone number"
-                  />
-                </div>
-
-                {/* Row 3 — Job + Password + Avatar */}
+                {/* Row 2 — Job + Password + Avatar */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input
                     className="border rounded px-3 py-2 w-full"
