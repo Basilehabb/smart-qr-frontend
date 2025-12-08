@@ -315,19 +315,22 @@ export default function EditProfilePage() {
 
   async function uploadAvatarToServer() {
     if (!avatarFile) return null;
+  
     try {
       const fd = new FormData();
       fd.append("file", avatarFile);
-      // if you have an endpoint to upload avatar, use it (example '/upload/avatar')
-      // const res = await api.post("/upload/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      // return res.data.url;
-      // fallback: return base64 preview (already set)
-      return avatarPreview;
+  
+      const res = await api.post("/auth/upload-avatar", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+  
+      return res.data.url; // رابط الصورة من Cloudinary
     } catch (err) {
       console.error("upload avatar failed", err);
       return null;
     }
   }
+  
 
   // Save
   async function saveProfile() {
