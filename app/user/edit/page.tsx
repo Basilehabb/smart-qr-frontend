@@ -331,7 +331,6 @@ export default function EditProfilePage() {
     }
   }
   
-
   // Save
   async function saveProfile() {
     setError(null);
@@ -373,7 +372,6 @@ export default function EditProfilePage() {
         profile: cleanProfile,
       };
       
-  
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
   
