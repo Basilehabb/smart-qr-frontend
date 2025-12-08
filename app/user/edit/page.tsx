@@ -203,9 +203,13 @@ export default function EditProfilePage() {
   // Delete
   function deleteField(section: keyof ProfileSections, key: string) {
     setProfile((prev) => {
-      const copy = { ...prev, [section]: { ...(prev as any)[section] } };
-      delete (copy as any)[section][key];
-      return copy;
+      const newSection = { ...prev[section] };
+      delete newSection[key];
+  
+      return {
+        ...prev,
+        [section]: newSection,
+      };
     });
   }
 
@@ -278,49 +282,32 @@ export default function EditProfilePage() {
   async function saveProfile() {
     setError(null);
     setSaving(true);
-
-    if (!isEmail(email)) {
-      setError("Invalid email");
-      setSaving(false);
-      return;
-    }
-    // validate fields by platform
-    for (const sec of Object.keys(profile) as (keyof ProfileSections)[]) {
-      for (const [key, val] of Object.entries((profile as any)[sec]) as [string, string][]) {
-        const plat = platforms.find((p) => p.id === key);
-        if (!plat) continue;
-        if (plat.requires === "phone" && !isPhone(val) && !isPhone(digitsOnly(val))) {
-          setError(`${plat.title} requires a valid phone number`);
-          setSaving(false);
-          return;
-        }
-        if (plat.requires === "url" && !isUrl(val)) {
-          setError(`${plat.title} requires a valid URL`);
-          setSaving(false);
-          return;
-        }
-        if (plat.requires === "text" && (!val || val.trim() === "")) {
-          setError(`${plat.title} value is required`);
-          setSaving(false);
-          return;
-        }
-      }
-    }
-
+  
     try {
       const token = localStorage.getItem("user-token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
+      if (!token) return (window.location.href = "/login");
+  
       const avatarUrl = await uploadAvatarToServer();
-
-      const payload: any = { name, email, phone, countryCode, job, profile };
+  
+      // مهم جدًا: عمل نسخة جديدة من profile
+      const cleanProfile = JSON.parse(JSON.stringify(profile));
+  
+      const payload: any = {
+        name,
+        email,
+        job,
+        phone,
+        countryCode,
+        profile: cleanProfile,
+      };
+  
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
-
-      await api.put("/auth/update", payload, { headers: { Authorization: `Bearer ${token}` } });
+  
+      await api.put("/auth/update", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
       alert("Profile updated");
     } catch (err: any) {
       console.error(err);
@@ -426,10 +413,10 @@ export default function EditProfilePage() {
                         w-14      /* العرض أصغر */
                       "
                     >
-                      <option value="+20">+20</option>
-                      <option value="+971">+971</option>
-                      <option value="+966">+966</option>
-                      <option value="+1">+1</option>
+                      <option value="+20">+20  </option>
+                      <option value="+971">+971  </option>
+                      <option value="+966">+966  </option>
+                      <option value="+1">+1  </option>
                     </select>
 
                     <input
