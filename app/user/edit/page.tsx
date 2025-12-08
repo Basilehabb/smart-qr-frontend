@@ -348,56 +348,47 @@ export default function EditProfilePage() {
   
       const avatarUrl = await uploadAvatarToServer();
   
-      // FORCE keep order exactly as in the UI
+      // ⭐⭐⭐ Build profile object with EXACT order from UI state
       const cleanProfile: any = {};
-
+  
       for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
-        const ordered: any = {};
-        const entries = Object.entries(profile[section]);
-
-        // copy entries in the EXACT order of the UI
-        for (const [k, v] of entries) {
-          ordered[k] = v;
-        }
-
-        cleanProfile[section] = ordered;
+        cleanProfile[section] = { ...profile[section] }; // نسخ مباشر بنفس الترتيب
       }
-
+  
       const payload: any = {
         name,
         email,
         job,
         phone,
         countryCode,
-        profile: cleanProfile,
+        profile: cleanProfile
       };
       
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
   
-      // 1) Update
+      // Update
       await api.put("/auth/update", payload, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
   
-      // 2) Fetch updated data (المهم جدا)
+      // Fetch fresh data
       const updated = await api.get("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
   
       const newUser = updated.data.user;
   
-      // 3) Update UI
+      // Update UI with fresh data
       setUser(newUser);
       setName(newUser.name || "");
       setEmail(newUser.email || "");
       setPhone(newUser.phone || "");
       setJob(newUser.job || "");
       setCountryCode(newUser.countryCode || "+20");
-  
       setAvatarPreview(newUser.avatar || null);
   
-      // 4) Rebuild profile EXACTLY as returned from backend (KEEP ORDER)
+      // ⭐ Update profile state with backend response
       setProfile({
         social: newUser.profile.social || {},
         contact: newUser.profile.contact || {},
@@ -406,14 +397,13 @@ export default function EditProfilePage() {
         music: newUser.profile.music || {},
         design: newUser.profile.design || {},
         gaming: newUser.profile.gaming || {},
-        other: newUser.profile.other || {},
+        other: newUser.profile.other || {}
       });
-
   
-      // 5) Clear deleted buffer (safe now)
+      // Clear deleted buffer
       setDeletedBuffer({});
   
-      alert("Profile updated");
+      alert("Profile updated successfully!");
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.message || "Failed to save");
