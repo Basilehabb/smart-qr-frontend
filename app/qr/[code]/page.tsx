@@ -8,12 +8,11 @@ async function fetchQr(code: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/qr/${code}`, {
     cache: "no-store",
   });
-
   if (!res.ok) throw new Error("QR not found");
   return res.json();
 }
 
-// ⚡ لترتيب الأقسام
+// نفس الترتيب
 const SECTIONS = [
   { key: "contact", title: "Contact" },
   { key: "social", title: "Social" },
@@ -25,7 +24,16 @@ const SECTIONS = [
   { key: "other", title: "Other" },
 ];
 
-// UI Component لعرض لينك واحد
+// 🔥 platform titles هنا
+const PLATFORM_TITLES: Record<string, string> = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  website: "Website",
+  phone: "Phone",
+};
+
 function LinkItem({ title, value }: { title: string; value: string }) {
   return (
     <a
@@ -35,7 +43,7 @@ function LinkItem({ title, value }: { title: string; value: string }) {
     >
       <div>
         <div className="font-semibold text-gray-700">{title}</div>
-        <div className="text-xs text-gray-500 break-all">{String(value)}</div>
+        <div className="text-xs text-gray-500 break-all">{value}</div>
       </div>
       <span className="text-indigo-500 text-sm">Open</span>
     </a>
@@ -48,12 +56,13 @@ export default async function Page({ params }: Props) {
   try {
     const data = await fetchQr(code);
 
-    // CASE 1 — QR NOT LINKED
+    // QR NOT LINKED
     if (!data.user) {
       return (
         <main className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="p-8 bg-white rounded shadow max-w-md w-full text-center">
             <h2 className="text-xl font-semibold mb-2">هذا الـ QR غير مربوط</h2>
+
             <p className="text-gray-600 mb-4">
               يمكنك تسجيل حساب جديد أو تسجيل دخول لربط هذا QR.
             </p>
@@ -73,26 +82,41 @@ export default async function Page({ params }: Props) {
       );
     }
 
-    // CASE 2 — QR LINKED
     const user = data.user;
     const profile = user.profile || {};
 
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
         <div className="bg-white p-6 rounded-xl shadow-lg max-w-lg w-full">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            <p className="text-gray-500 text-sm">{user.job}</p>
 
-            {user.phone && (
+          {/* ===== Avatar + Name ===== */}
+          <div className="text-center mb-6">
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                className="w-24 h-24 rounded-full mx-auto object-cover mb-3 shadow"
+                alt="Avatar"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-300 mx-auto flex items-center justify-center text-3xl font-bold text-white mb-3">
+                {user.name?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
+
+            <h1 className="text-2xl font-bold">{user.name}</h1>
+
+            {user.job && (
+              <p className="text-gray-500 text-sm">{user.job}</p>
+            )}
+
+            {(user.countryCode || user.phone) && (
               <p className="text-gray-600 mt-1">
                 {user.countryCode} {user.phone}
               </p>
             )}
           </div>
 
-          {/* SECTIONS */}
+          {/* ===== SECTIONS ===== */}
           <div className="space-y-6">
             {SECTIONS.map((sec) => {
               const entries = Object.entries(profile[sec.key] || {}).filter(
@@ -103,13 +127,15 @@ export default async function Page({ params }: Props) {
 
               return (
                 <div key={sec.key}>
-                  <h3 className="text-sm font-bold text-gray-600 mb-2">{sec.title}</h3>
+                  <h3 className="text-sm font-bold text-gray-600 mb-2">
+                    {sec.title}
+                  </h3>
 
                   <div className="space-y-2">
                     {entries.map(([key, value]) => (
                       <LinkItem
                         key={key}
-                        title={key}
+                        title={PLATFORM_TITLES[key] || key}
                         value={String(value)}
                       />
                     ))}
