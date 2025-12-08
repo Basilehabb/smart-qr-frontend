@@ -388,32 +388,29 @@ export default function EditProfilePage() {
         {/* Center: Fields list (editor) */}
         <div className="col-span-12 md:col-span-8 lg:col-span-6">
           <div className="bg-white rounded-xl shadow p-6 space-y-4">
-
             {/* Basic info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Name */}
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Full name"
+                />
 
-              {/* Name */}
-              <input
-                className="border rounded px-3 py-2 w-full"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Full name"
-              />
-
-              {/* Email */}
-              <input
-                className="border rounded px-3 py-2 w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-              />
-
-              {/* PHONE FULL ROW */}
-              <div className="flex items-center gap-2">
+                {/* Email */}
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                />
+                {/* PHONE FULL ROW */}
+                <div className="flex gap-2 w-full">
 
                 {/* Country Code */}
                 <select
-                  className="border rounded px-2 py-2 text-sm w-20 shrink-0"
+                  className="border rounded px-2 py-2 w-20 text-sm"
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                 >
@@ -425,44 +422,45 @@ export default function EditProfilePage() {
 
                 {/* Phone Number */}
                 <input
-                  className="border rounded px-3 py-2 text-sm w-[150px] shrink-0"
+                  className="border rounded px-3 py-2 text-sm w-[160px]"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number"
                 />
-            </div>
+                </div>
+              </div>
 
-            {/* Job + Password + Avatar */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-
-              <input
-                className="border rounded px-3 py-2 w-full"
-                value={job}
-                onChange={(e) => setJob(e.target.value)}
-                placeholder="Job / Title"
-              />
-
-              <input
-                className="border rounded px-3 py-2 w-full"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                placeholder="New password (optional)"
-              />
-
-              {/* Upload Avatar */}
-              <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
-                Upload avatar
+                  {/* Job + Password + Avatar */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                 <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={(e) => onAvatarChange(e.target.files?.[0])}
-                />
-              </label>
-          </div>
-        </div>
+                  className="border rounded px-3 py-2 w-full"
 
+                  value={job}
+                  onChange={(e) => setJob(e.target.value)}
+                  placeholder="Job / Title"
+                />
+
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  placeholder="New password (optional)"
+
+                />
+
+                  {/* Upload Avatar */}
+                <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
+                  Upload avatar
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => onAvatarChange(e.target.files?.[0])}
+                  />
+                </label>
+
+              </div>
             {/* tabs */}
             <div className="flex gap-2 border-b pb-2 overflow-x-auto">
               {sections.map((s) => (
