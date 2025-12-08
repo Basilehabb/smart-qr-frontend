@@ -385,15 +385,13 @@ export default function EditProfilePage() {
             </div>
           </div>
         </div>
-
-        {/* Center: Fields list (editor) */}
-        <div className="col-span-12 md:col-span-8 lg:col-span-6">
-          <div className="bg-white rounded-xl shadow p-6 space-y-4">
+        {/* TOP ROW — FIXED RESPONSIVE LAYOUT */}
+          <div className="grid grid-cols-12 gap-3 items-center">
             {/* Basic info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Name */}
                 <input
-                  className="border rounded px-3 py-2 w-full"
+                  className="col-span-3 border rounded px-3 py-2 w-full"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Full name"
@@ -401,63 +399,57 @@ export default function EditProfilePage() {
 
                 {/* Email */}
                 <input
-                  className="border rounded px-3 py-2 w-full"
+                  className="col-span-3 border rounded px-3 py-2 w-full"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                 />
 
-                {/* PHONE ROW — fixed */}
-                <div className="grid grid-cols-4 gap-3 w-full">
                 {/* Country Code */}
-                  <select
-                    className="border rounded px-2 py-2 w-full"
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                  >
-                    <option value="+20">🇪🇬 +20</option>
-                    <option value="+971">🇦🇪 +971</option>
-                    <option value="+966">🇸🇦 +966</option>
-                    <option value="+1">🇺🇸 +1</option>
-                  </select>
+                <select
+                  className="col-span-2 border rounded px-3 py-2 w-full"
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                >
+                  <option value="+20">🇪🇬 +20</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+966">🇸🇦 +966</option>
+                  <option value="+1">🇺🇸 +1</option>
+                </select>
 
-                  {/* Phone */}
-                  <input
-                    className="col-span-2 border rounded px-3 py-2 w-full"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Phone number"
-                  />
-                </div>
-              </div>
-
-                  {/* Job + Password + Avatar */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                {/* Phone Number - FIXED FULL WIDTH */}
                 <input
-                  className="border rounded px-3 py-2 w-full"
+                  className="col-span-2 border rounded px-3 py-2 w-full"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Phone number"
+                />
+              {/* SECOND ROW — JOB + PASSWORD */}
+                <div className="grid grid-cols-12 gap-3 mt-3">
+
+                {/* Job / Title */}
+                <input
+                  className="col-span-6 border rounded px-3 py-2 w-full"
                   value={job}
                   onChange={(e) => setJob(e.target.value)}
                   placeholder="Job / Title"
                 />
 
+                  {/* Password */}
                 <input
-                  className="border rounded px-3 py-2 w-full"
+                  className="col-span-6 border rounded px-3 py-2 w-full"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  type="password"
                   placeholder="New password (optional)"
+                  type="password"
                 />
 
-                  {/* Upload Avatar */}
-                <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
+                {/* Upload Avatar */}
+                <label className="col-span-2 px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer">
                   Upload avatar
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={(e) => onAvatarChange(e.target.files?.[0])}
-                  />
+                  <input type="file" hidden accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0])} />
                 </label>
+
               </div>
             {/* tabs */}
             <div className="flex gap-2 border-b pb-2 overflow-x-auto">
