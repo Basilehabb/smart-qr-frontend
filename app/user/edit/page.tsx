@@ -426,10 +426,10 @@ export default function EditProfilePage() {
                         w-14      /* العرض أصغر */
                       "
                     >
-                      <option value="+20">🇪🇬 +20</option>
-                      <option value="+971">🇦🇪 +971</option>
-                      <option value="+966">🇸🇦 +966</option>
-                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+20">+20</option>
+                      <option value="+971">+971</option>
+                      <option value="+966">+966</option>
+                      <option value="+1">+1</option>
                     </select>
 
                     <input
