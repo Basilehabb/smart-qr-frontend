@@ -385,165 +385,179 @@ export default function EditProfilePage() {
             </div>
           </div>
         </div>
-        {/* Basic Info Section */}
-          <div className="space-y-4">
+        {/* Center Column – Editor */}
+          <div className="col-span-12 md:col-span-8 lg:col-span-6">
+            <div className="bg-white rounded-xl shadow p-6 space-y-4">
 
-          {/* Row 1 — Name + Email */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input
-              className="border rounded px-3 py-2 w-full"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full name"
-            />
+              {/* Basic Info Section */}
+              <div className="space-y-4">
 
-            <input
-              className="border rounded px-3 py-2 w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-            />
-          </div>
+                {/* Row 1 — Name + Email */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    className="border rounded px-3 py-2 w-full"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full name"
+                  />
 
-          {/* Row 2 — Phone inside one input */}
-          <div className="relative w-full">
-            {/* Country Code dropdown inside the input */}
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="
-                absolute left-2 top-1/2 -translate-y-1/2 
-                bg-transparent text-sm text-gray-600
-                cursor-pointer pr-6 outline-none
-              "
-            >
-              <option value="+20">🇪🇬 +20</option>
-              <option value="+971">🇦🇪 +971</option>
-              <option value="+966">🇸🇦 +966</option>
-              <option value="+1">🇺🇸 +1</option>
-            </select>
+                  <input
+                    className="border rounded px-3 py-2 w-full"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                  />
+                </div>
 
-            {/* Phone Input */}
-            <input
-              className="border rounded px-3 py-2 w-full pl-24 text-sm"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone number"
-            />
-          </div>
+                {/* Row 2 — Phone with code inside input */}
+                <div className="relative w-full">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="
+                      absolute left-2 top-1/2 -translate-y-1/2
+                      bg-transparent text-sm text-gray-600 cursor-pointer
+                      pr-6 outline-none
+                    "
+                  >
+                    <option value="+20">🇪🇬 +20</option>
+                    <option value="+971">🇦🇪 +971</option>
+                    <option value="+966">🇸🇦 +966</option>
+                    <option value="+1">🇺🇸 +1</option>
+                  </select>
 
-          {/* Row 3 — Job + Password + Avatar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <input
-              className="border rounded px-3 py-2 w-full"
-              value={job}
-              onChange={(e) => setJob(e.target.value)}
-              placeholder="Job / Title"
-            />
+                  <input
+                    className="border rounded px-3 py-2 w-full pl-24 text-sm"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Phone number"
+                  />
+                </div>
 
-            <input
-              className="border rounded px-3 py-2 w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              placeholder="New password (optional)"
-            />
+                {/* Row 3 — Job + Password + Avatar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    className="border rounded px-3 py-2 w-full"
+                    value={job}
+                    onChange={(e) => setJob(e.target.value)}
+                    placeholder="Job / Title"
+                  />
 
-            <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
-              Upload avatar
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => onAvatarChange(e.target.files?.[0])}
-              />
-            </label>
-          </div>
-            {/* tabs */}
-            <div className="flex gap-2 border-b pb-2 overflow-x-auto">
-              {sections.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setActiveTab(s.key)}
-                  className={`px-3 py-2 rounded-t ${activeTab === s.key ? "bg-white border-l border-r border-t -mb-px text-indigo-600" : "text-gray-600"}`}
-                >
-                  {s.title}
-                </button>
-              ))}
-            </div>
+                  <input
+                    className="border rounded px-3 py-2 w-full"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type="password"
+                    placeholder="New password (optional)"
+                  />
 
-            {/* Field editor */}
-            <div className="bg-slate-50 p-4 rounded">
-              <div className="space-y-3">
-                {Object.entries(profile[activeTab]).length === 0 && <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>}
+                  <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
+                    Upload avatar
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => onAvatarChange(e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+              </div>
 
-                {(Object.entries(profile[activeTab]) as [string, string][]).map(([plat, val]) => {
-                  const platInfo = platforms.find((p) => p.id === plat);
-                  const title = platInfo?.title || plat;
-                  return (
-                    <div
-                      key={plat}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, activeTab, plat)}
-                      onDragOver={allowDrop}
-                      onDrop={(e) => handleDrop(e, activeTab, plat)}
-                      className="p-3 bg-white rounded border flex items-start justify-between gap-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="cursor-move text-slate-400 mt-1">≡</div>
-                        <div>
-                          <div className="text-sm font-semibold">{title}</div>
-                          <input
-                            className="border rounded px-3 py-2 w-[420px] max-w-full"
-                            value={val}
-                            onChange={(e) =>
-                              setProfile((prev) => ({ ...prev, [activeTab]: { ...(prev as any)[activeTab], [plat]: e.target.value } }))
-                            }
-                          />
-                          <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
+              {/* Tabs */}
+              <div className="flex gap-2 border-b pb-2 overflow-x-auto">
+                {sections.map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => setActiveTab(s.key)}
+                    className={`px-3 py-2 rounded-t ${
+                      activeTab === s.key
+                        ? "bg-white border-l border-r border-t -mb-px text-indigo-600"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+
+              {/* Field Editor */}
+              <div className="bg-slate-50 p-4 rounded">
+                <div className="space-y-3">
+                  {Object.entries(profile[activeTab]).length === 0 && (
+                    <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>
+                  )}
+
+                  {(Object.entries(profile[activeTab]) as [string, string][]).map(([plat, val]) => {
+                    const platInfo = platforms.find((p) => p.id === plat);
+                    const title = platInfo?.title || plat;
+
+                    return (
+                      <div
+                        key={plat}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, activeTab, plat)}
+                        onDragOver={allowDrop}
+                        onDrop={(e) => handleDrop(e, activeTab, plat)}
+                        className="p-3 bg-white rounded border flex items-start justify-between gap-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="cursor-move text-slate-400 mt-1">≡</div>
+                          <div>
+                            <div className="text-sm font-semibold">{title}</div>
+                            <input
+                              className="border rounded px-3 py-2 w-[420px] max-w-full"
+                              value={val}
+                              onChange={(e) =>
+                                setProfile((prev) => ({
+                                  ...prev,
+                                  [activeTab]: { ...(prev as any)[activeTab], [plat]: e.target.value },
+                                }))
+                              }
+                            />
+                            <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            title="Open"
+                            onClick={() => window.open(val, "_blank")}
+                            className="p-2 border rounded"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
+
+                          <button
+                            title="Delete"
+                            onClick={() => deleteField(activeTab, plat)}
+                            className="p-2 bg-red-600 text-white rounded"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          title="Open"
-                          onClick={() => {
-                            window.open(val, "_blank");
-                          }}
-                          className="p-2 border rounded"
-                        >
-                          <ExternalLink size={14} />
-                        </button>
-
-                        <button title="Delete" onClick={() => deleteField(activeTab, plat)} className="p-2 bg-red-600 text-white rounded">
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {error && <div className="text-red-600">{error}</div>}
-
-            <div className="flex justify-between items-center">
-              <div>
+              {/* Buttons */}
+              <div className="flex justify-between items-center">
                 <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-purple-600 text-white rounded">
                   + Add Link
                 </button>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded">
-                  Cancel
-                </button>
-                <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded">
-                  {saving ? "Saving..." : "Save & Continue"}
-                </button>
+
+                <div className="flex gap-2">
+                  <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded">
+                    Cancel
+                  </button>
+                  <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded">
+                    {saving ? "Saving..." : "Save & Continue"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right: Fields library */}
         <div className="col-span-12 md:col-span-6 lg:col-span-3">
@@ -647,5 +661,6 @@ export default function EditProfilePage() {
         </div>
       )}
   </div>
+</div>
   );
 }
