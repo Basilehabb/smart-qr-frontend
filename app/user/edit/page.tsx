@@ -410,7 +410,7 @@ export default function EditProfilePage() {
 
                 {/* Country Code */}
                 <select
-                  className="border rounded px-2 py-2 w-20 text-sm"
+                  className="border rounded px-2 py-2 w-18 text-sm"
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                 >
@@ -422,7 +422,7 @@ export default function EditProfilePage() {
 
                 {/* Phone Number */}
                 <input
-                  className="border rounded px-3 py-2 text-sm w-[120px]"
+                  className="border rounded px-3 py-2 text-sm w-[110px]"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number"
