@@ -320,7 +320,7 @@ export default function EditProfilePage() {
       const fd = new FormData();
       fd.append("file", avatarFile);
   
-      const res = await api.post("/auth/upload-avatar", fd, {
+      const res = await api.post("/upload/avatar", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
   
