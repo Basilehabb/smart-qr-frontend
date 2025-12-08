@@ -119,9 +119,9 @@ export default async function Page({ params }: Props) {
           {/* ===== SECTIONS ===== */}
           <div className="space-y-6">
             {SECTIONS.map((sec) => {
-              const entries = Object.entries(profile[sec.key] || {}).filter(
-                ([_, v]) => v !== null && String(v).trim() !== ""
-              );
+              const entries = Object.entries(profile[sec.key] || {})
+              .filter(([_, v]) => v !== null && String(v).trim() !== "")
+              .sort((a, b) => 0); // preserve original saved order exactly
 
               if (entries.length === 0) return null;
 

@@ -450,7 +450,7 @@ export default function EditProfilePage() {
 
             <div className="mt-6 space-y-3">
               {sections.map((s) => {
-                const entries = Object.entries((profile as any)[s.key] || {}) as [string, string | null][];
+                const entries = Object.entries((profile as any)[s.key] || {}) as [string,   string | null][];
                 return entries.length ? (
                   <div key={s.key}>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase">{s.title}</h4>
