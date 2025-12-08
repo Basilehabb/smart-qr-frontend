@@ -349,8 +349,15 @@ export default function EditProfilePage() {
   
       const avatarUrl = await uploadAvatarToServer();
   
-      const cleanProfile = JSON.parse(JSON.stringify(profile));
-  
+      const cleanProfile: any = {};
+      for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
+        const ordered: Record<string, any> = {};
+        for (const key of Object.keys(profile[section])) {
+          ordered[key] = profile[section][key];
+        }
+        cleanProfile[section] = ordered;
+      }
+        
       const payload: any = {
         name,
         email,
