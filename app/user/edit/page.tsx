@@ -202,15 +202,13 @@ export default function EditProfilePage() {
 
   // Delete
   function deleteField(section: keyof ProfileSections, key: string) {
-    setProfile((prev) => {
-      const newSection = { ...prev[section] };
-      delete newSection[key];
-  
-      return {
-        ...prev,
-        [section]: newSection,
-      };
-    });
+    setProfile((prev) => ({
+      ...prev,
+      [section]: {
+        ...(prev as any)[section],
+        [key]: null,   // بدل delete → حط null
+      },
+    }));
   }
 
   // Drag
@@ -398,34 +396,24 @@ export default function EditProfilePage() {
                   />
 
                   {/* Phone (with country code inside) */}
-                  <div className="relative w-full">
+                  <div className="flex items-center border rounded-l px-2 bg-white text-sm text-gray-600">
                     <select
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
-                      className="
-                        absolute left-2 top-1/2 -translate-y-1/2 
-                        bg-transparent 
-                        text-xs   /* أصغر */
-                        text-gray-600
-                        cursor-pointer 
-                        pr-5 
-                        outline-none
-                        w-14      /* العرض أصغر */
-                      "
+                      className="bg-transparent outline-none text-sm"
                     >
-                      <option value="+20">+20  </option>
-                      <option value="+971">+971  </option>
-                      <option value="+966">+966  </option>
-                      <option value="+1">+1  </option>
+                      <option value="+20">+20</option>
+                      <option value="+971">+971</option>
+                      <option value="+966">+966</option>
+                      <option value="+1">+1</option>
                     </select>
-
-                    <input
-                      className="border rounded px-3 py-2 w-full pl-20 text-sm"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Phone number"
-                    />
                   </div>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Phone number"
+                    className="border border-l-0 rounded-r px-3 py-2 w-full text-sm"
+                  />
                 </div>
                 {/* Row 2 — Job + Password + Avatar */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
