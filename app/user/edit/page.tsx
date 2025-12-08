@@ -422,7 +422,7 @@ export default function EditProfilePage() {
 
                 {/* Phone Number */}
                 <input
-                  className="border rounded px-3 py-2 text-sm w-[160px]"
+                  className="border rounded px-3 py-2 text-sm w-[120px]"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number"
