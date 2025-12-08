@@ -416,9 +416,14 @@ export default function EditProfilePage() {
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
                       className="
-                        absolute left-2 top-1/2 -translate-y-1/2
-                        bg-transparent text-sm text-gray-600
-                        cursor-pointer pr-6 outline-none
+                        absolute left-2 top-1/2 -translate-y-1/2 
+                        bg-transparent 
+                        text-xs   /* أصغر */
+                        text-gray-600
+                        cursor-pointer 
+                        pr-5 
+                        outline-none
+                        w-14      /* العرض أصغر */
                       "
                     >
                       <option value="+20">🇪🇬 +20</option>
@@ -428,7 +433,7 @@ export default function EditProfilePage() {
                     </select>
 
                     <input
-                      className="border rounded px-3 py-2 pl-24 text-sm w-full"
+                      className="border rounded px-3 py-2 w-full pl-20 text-sm"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="Phone number"
@@ -543,16 +548,27 @@ export default function EditProfilePage() {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-between items-center">
-                <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-purple-600 text-white rounded">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
+                <button 
+                  onClick={() => setShowAddDialog(true)} 
+                  className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto"
+                >
                   + Add Link
                 </button>
 
-                <div className="flex gap-2">
-                  <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded">
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                  <button 
+                    onClick={() => (window.location.href = "/")} 
+                    className="px-4 py-2 border rounded w-full md:w-auto"
+                  >
                     Cancel
                   </button>
-                  <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded">
+
+                  <button 
+                    onClick={saveProfile} 
+                    disabled={saving} 
+                    className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto"
+                  >
                     {saving ? "Saving..." : "Save & Continue"}
                   </button>
                 </div>
@@ -604,7 +620,7 @@ export default function EditProfilePage() {
               })}
             </div>
           </div>
-      </div>
+        </div>
 
       {/* Add dialog */}
       {showAddDialog && (
