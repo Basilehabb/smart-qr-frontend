@@ -349,15 +349,21 @@ export default function EditProfilePage() {
   
       const avatarUrl = await uploadAvatarToServer();
   
+      // FORCE keep order exactly as in the UI
       const cleanProfile: any = {};
+
       for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
-        const ordered: Record<string, any> = {};
-        for (const key of Object.keys(profile[section])) {
-          ordered[key] = profile[section][key];
+        const ordered: any = {};
+        const entries = Object.entries(profile[section]);
+
+        // copy entries in the EXACT order of the UI
+        for (const [k, v] of entries) {
+          ordered[k] = v;
         }
+
         cleanProfile[section] = ordered;
       }
-        
+
       const payload: any = {
         name,
         email,
@@ -366,6 +372,7 @@ export default function EditProfilePage() {
         countryCode,
         profile: cleanProfile,
       };
+      
   
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
