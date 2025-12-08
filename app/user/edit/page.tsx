@@ -630,7 +630,7 @@ export default function EditProfilePage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap md:flex-nowrap">
                         {!isPendingDelete && (
                           <button
                             title="Open"
