@@ -14,14 +14,14 @@ type Platform = {
 };
 
 type ProfileSections = {
-  social: Record<string, string>;
-  contact: Record<string, string>;
-  payment: Record<string, string>;
-  video: Record<string, string>;
-  music: Record<string, string>;
-  design: Record<string, string>;
-  gaming: Record<string, string>;
-  other: Record<string, string>;
+  social: Record<string, string | null>;
+  contact: Record<string, string | null>;
+  payment: Record<string, string | null>;
+  video: Record<string, string | null>;
+  music: Record<string, string | null>;
+  design: Record<string, string | null>;
+  gaming: Record<string, string | null>;
+  other: Record<string, string | null>;
 };
 
 const EMPTY_PROFILE: ProfileSections = {
@@ -47,9 +47,12 @@ export default function EditProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  // profile sections
+  // profile sections (allow null values to mark pending-deletes)
   const [profile, setProfile] = useState<ProfileSections>(EMPTY_PROFILE);
   const [activeTab, setActiveTab] = useState<keyof ProfileSections>("social");
+
+  // store previous values on delete so we can undo
+  const [deletedBuffer, setDeletedBuffer] = useState<Record<string, Record<string, string>>>({});
 
   // available platforms
   const [platforms, setPlatforms] = useState<Platform[]>([]);
@@ -103,16 +106,36 @@ export default function EditProfilePage() {
         setEmail(u.email || "");
         setPhone(u.phone || "");
         setJob(u.job || "");
+        // normalize incoming profile: convert Maps or non-plain to plain object with string values
         if (u.profile) {
+          const normalizeSection = (sec: any) => {
+            if (!sec) return {};
+            // if it's a Map-like: convert
+            if (typeof sec.entries === "function") {
+              const out: Record<string, string> = {};
+              for (const [k, v] of sec.entries()) {
+                out[k] = String(v);
+              }
+              return out;
+            }
+            // otherwise assume plain object
+            const out: Record<string, string> = {};
+            for (const k of Object.keys(sec)) {
+              const val = (sec as any)[k];
+              out[k] = val == null ? "" : String(val);
+            }
+            return out;
+          };
+
           setProfile({
-            social: u.profile?.social || {},
-            contact: u.profile?.contact || {},
-            payment: u.profile?.payment || {},
-            video: u.profile?.video || {},
-            music: u.profile?.music || {},
-            design: u.profile?.design || {},
-            gaming: u.profile?.gaming || {},
-            other: u.profile?.other || {},
+            social: normalizeSection(u.profile.social),
+            contact: normalizeSection(u.profile.contact),
+            payment: normalizeSection(u.profile.payment),
+            video: normalizeSection(u.profile.video),
+            music: normalizeSection(u.profile.music),
+            design: normalizeSection(u.profile.design),
+            gaming: normalizeSection(u.profile.gaming),
+            other: normalizeSection(u.profile.other),
           });
         }
         if (u.avatarUrl) setAvatarPreview(u.avatarUrl);
@@ -123,6 +146,7 @@ export default function EditProfilePage() {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // fallback platforms if backend isn't ready
@@ -134,7 +158,6 @@ export default function EditProfilePage() {
       { id: "facebook", title: "Facebook", category: "social", requires: "url" },
       { id: "tiktok", title: "TikTok", category: "social", requires: "text", template: "https://tiktok.com/@{VALUE}" },
       { id: "phone", title: "Phone", category: "contact", requires: "phone" },
-      // add more as needed
     ];
   }
 
@@ -200,18 +223,48 @@ export default function EditProfilePage() {
     }));
   }
 
-  // Delete
+  // Delete → mark as null (pending delete) and keep previous value in buffer
   function deleteField(section: keyof ProfileSections, key: string) {
-    setProfile((prev) => ({
-      ...prev,
-      [section]: {
-        ...(prev as any)[section],
-        [key]: null,   // بدل delete → حط null
-      },
-    }));
+    setProfile((prev) => {
+      const sectionObj = { ...(prev as any)[section] };
+      const prevVal = sectionObj[key] ?? "";
+      // store previous value in buffer
+      setDeletedBuffer((buf) => {
+        const copy = { ...buf };
+        if (!copy[section]) copy[section] = {};
+        copy[section][key] = String(prevVal);
+        return copy;
+      });
+      // mark as null (pending delete)
+      sectionObj[key] = null;
+      return { ...prev, [section]: sectionObj };
+    });
   }
 
-  // Drag
+  // Undo delete: restore from buffer (if exists)
+  function undoDelete(section: keyof ProfileSections, key: string) {
+    setDeletedBuffer((buf) => {
+      const copy = { ...buf };
+      const prevVal = copy[section]?.[key];
+      setProfile((prev) => {
+        const sectionObj = { ...(prev as any)[section] };
+        if (prevVal !== undefined) {
+          sectionObj[key] = prevVal;
+        } else {
+          // if nothing in buffer, just remove the key (clean)
+          delete sectionObj[key];
+        }
+        return { ...prev, [section]: sectionObj };
+      });
+      if (copy[section]) {
+        delete copy[section][key];
+        if (Object.keys(copy[section]).length === 0) delete copy[section];
+      }
+      return copy;
+    });
+  }
+
+  // Drag handlers
   function handleDragStart(e: React.DragEvent, section: keyof ProfileSections, key: string) {
     dragItem.current = { section, key };
     e.dataTransfer.effectAllowed = "move";
@@ -234,7 +287,7 @@ export default function EditProfilePage() {
       });
     } else {
       setProfile((prev) => {
-        const items = Object.entries((prev as any)[section]) as [string, string][];
+        const items = Object.entries((prev as any)[section]) as [string, string | null][];
         const from = items.findIndex(([k]) => k === src.key);
         if (from === -1) return prev;
         const [moved] = items.splice(from, 1);
@@ -243,7 +296,7 @@ export default function EditProfilePage() {
           const to = items.findIndex(([k]) => k === key);
           items.splice(to, 0, moved);
         }
-        const newObj: Record<string, string> = {};
+        const newObj: Record<string, string | null> = {};
         items.forEach(([k, v]) => (newObj[k] = v));
         return { ...prev, [section]: newObj };
       });
@@ -280,16 +333,24 @@ export default function EditProfilePage() {
   async function saveProfile() {
     setError(null);
     setSaving(true);
-  
+
+    // basic validation
+    if (!isEmail(email)) {
+      setError("Invalid email");
+      setSaving(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem("user-token");
       if (!token) return (window.location.href = "/login");
-  
+
       const avatarUrl = await uploadAvatarToServer();
-  
-      // مهم جدًا: عمل نسخة جديدة من profile
+
+      // prepare payload: include nulls as-is so backend deletes those keys
+      // but ensure we send plain objects (no functions)
       const cleanProfile = JSON.parse(JSON.stringify(profile));
-  
+
       const payload: any = {
         name,
         email,
@@ -298,14 +359,34 @@ export default function EditProfilePage() {
         countryCode,
         profile: cleanProfile,
       };
-  
+
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
-  
+
       await api.put("/auth/update", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
+      // clear buffer for any items that were deleted (because backend applied)
+      setDeletedBuffer((buf) => {
+        // remove buffer entries that correspond to nulls in profile
+        const copy = { ...buf };
+        for (const sec of Object.keys(buf)) {
+          for (const key of Object.keys(buf[sec])) {
+            const pSec = (profile as any)[sec];
+            if (!pSec) {
+              delete copy[sec][key];
+              continue;
+            }
+            if (pSec[key] === null) {
+              delete copy[sec][key];
+            }
+          }
+          if (copy[sec] && Object.keys(copy[sec]).length === 0) delete copy[sec];
+        }
+        return copy;
+      });
+
       alert("Profile updated");
     } catch (err: any) {
       console.error(err);
@@ -347,22 +428,35 @@ export default function EditProfilePage() {
 
             <div className="mt-6 space-y-3">
               {sections.map((s) => {
-                const entries = Object.entries((profile as any)[s.key]) as [string, string][];
+                const entries = Object.entries((profile as any)[s.key] || {}) as [string, string | null][];
                 return entries.length ? (
                   <div key={s.key}>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase">{s.title}</h4>
                     <div className="mt-2 space-y-1">
-                      {entries.map(([k, v]) => (
-                        <div key={k} className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">•</div>
-                          <div className="text-sm text-gray-700">
-                            <div className="font-medium">{getPlatformTitle(k)}</div>
-                            <a href={v} target="_blank" rel="noreferrer" className="text-xs text-gray-500 break-all inline-block">
-                              {v}
-                            </a>
+                      {entries.map(([k, v]) => {
+                        if (v === null) {
+                          return (
+                            <div key={k} className="flex items-center gap-3 opacity-60 text-sm text-rose-600">
+                              <div className="w-8 h-8 bg-rose-50 rounded-full flex items-center justify-center text-rose-600">!</div>
+                              <div className="text-sm">
+                                <div className="font-medium">{getPlatformTitle(k)}</div>
+                                <div className="text-xs">Will be removed after save</div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={k} className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">•</div>
+                            <div className="text-sm text-gray-700">
+                              <div className="font-medium">{getPlatformTitle(k)}</div>
+                              <a href={String(v)} target="_blank" rel="noreferrer" className="text-xs text-gray-500 break-all inline-block">
+                                {v}
+                              </a>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null;
@@ -370,153 +464,143 @@ export default function EditProfilePage() {
             </div>
           </div>
         </div>
+
         {/* Center Column – Editor */}
-          <div className="col-span-12 md:col-span-8 lg:col-span-6">
-            <div className="bg-white rounded-xl shadow p-6 space-y-4">
-              {/* Basic Info Section */}
-              <div className="space-y-4">
-
+        <div className="col-span-12 md:col-span-8 lg:col-span-6">
+          <div className="bg-white rounded-xl shadow p-6 space-y-4">
+            {/* Basic Info Section */}
+            <div className="space-y-4">
               {/* Row 1 — Name + Email + Phone */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Name */}
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Full name"
+                />
 
-                  {/* Name */}
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Full name"
-                  />
+                {/* Email */}
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                />
 
-                  {/* Email */}
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email"
-                  />
-
-                  {/* Phone (with country code inside) */}
-                  <div className="flex items-center w-full">
-                    {/* Country Code Box */}
-                    <div className="
-                        flex items-center 
-                        border border-gray-300 
-                        bg-gray-50 
-                        rounded-l-lg 
-                        px-2 
+                {/* Phone (with country code box) */}
+                <div className="flex items-center w-full">
+                  <div
+                    className="
+                        flex items-center
+                        border border-gray-300
+                        bg-gray-50
+                        rounded-l-lg
+                        px-2
                         h-[42px]
                         text-sm text-gray-700
-                      ">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="
-                          bg-transparent 
-                          outline-none 
-                          cursor-pointer
-                          text-sm
-                        "
-                      >
-                        <option value="+20">+20</option>
-                        <option value="+971">+971</option>
-                        <option value="+966">+966</option>
-                        <option value="+1">+1</option>
-                      </select>
-                    </div>
-
-                    {/* Phone Input */}
-                    <input
-                      className="
-                        border border-gray-300 
-                        border-l-0 
-                        rounded-r-lg 
-                        px-3 
-                        h-[42px]
-                        w-full 
-                        text-sm 
-                        focus:outline-none 
-                        focus:ring-1 
-                        focus:ring-indigo-500
                       "
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Phone number"
-                    />
-                  </div>
-                </div>
-                {/* Row 2 — Job + Password + Avatar */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={job}
-                    onChange={(e) => setJob(e.target.value)}
-                    placeholder="Job / Title"
-                  />
-
-                  <input
-                    className="border rounded px-3 py-2 w-full"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="New password (optional)"
-                  />
-
-                  <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
-                    Upload avatar
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => onAvatarChange(e.target.files?.[0])}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 border-b pb-2 overflow-x-auto">
-                {sections.map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => setActiveTab(s.key)}
-                    className={`px-3 py-2 rounded-t ${
-                      activeTab === s.key
-                        ? "bg-white border-l border-r border-t -mb-px text-indigo-600"
-                        : "text-gray-600"
-                    }`}
                   >
-                    {s.title}
-                  </button>
-                ))}
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      className="bg-transparent outline-none cursor-pointer text-sm"
+                    >
+                      <option value="+20">+20</option>
+                      <option value="+971">+971</option>
+                      <option value="+966">+966</option>
+                      <option value="+1">+1</option>
+                    </select>
+                  </div>
+
+                  <input
+                    className="border border-gray-300 border-l-0 rounded-r-lg px-3 h-[42px] w-full text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Phone number"
+                  />
+                </div>
               </div>
 
-              {/* Field Editor */}
-              <div className="bg-slate-50 p-4 rounded">
-                <div className="space-y-3">
-                  {Object.entries(profile[activeTab]).length === 0 && (
-                    <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>
-                  )}
+              {/* Row 2 — Job + Password + Avatar */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={job}
+                  onChange={(e) => setJob(e.target.value)}
+                  placeholder="Job / Title"
+                />
 
-                  {(Object.entries(profile[activeTab]) as [string, string][]).map(([plat, val]) => {
-                    const platInfo = platforms.find((p) => p.id === plat);
-                    const title = platInfo?.title || plat;
+                <input
+                  className="border rounded px-3 py-2 w-full"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  placeholder="New password (optional)"
+                />
 
-                    return (
-                      <div
-                        key={plat}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, activeTab, plat)}
-                        onDragOver={allowDrop}
-                        onDrop={(e) => handleDrop(e, activeTab, plat)}
-                        className="p-3 bg-white rounded border flex items-start justify-between gap-3"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="cursor-move text-slate-400 mt-1">≡</div>
-                          <div>
-                            <div className="text-sm font-semibold">{title}</div>
+                <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
+                  Upload avatar
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0])} />
+                </label>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 border-b pb-2 overflow-x-auto">
+              {sections.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setActiveTab(s.key)}
+                  className={`px-3 py-2 rounded-t ${activeTab === s.key ? "bg-white border-l border-r border-t -mb-px text-indigo-600" : "text-gray-600"}`}
+                >
+                  {s.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Field Editor */}
+            <div className="bg-slate-50 p-4 rounded">
+              <div className="space-y-3">
+                {Object.entries(profile[activeTab] || {}).length === 0 && <div className="text-gray-500">No links in this section yet. Add one with "Add Link".</div>}
+
+                {(Object.entries(profile[activeTab] || {}) as [string, string | null][]).map(([plat, val]) => {
+                  const platInfo = platforms.find((p) => p.id === plat);
+                  const title = platInfo?.title || plat;
+                  const isPendingDelete = val === null;
+
+                  return (
+                    <div
+                      key={plat}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, activeTab, plat)}
+                      onDragOver={allowDrop}
+                      onDrop={(e) => handleDrop(e, activeTab, plat)}
+                      className={`p-3 rounded border flex items-start justify-between gap-3 transition-opacity ${
+                        isPendingDelete ? "bg-rose-50 opacity-75 border-rose-200" : "bg-white"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="cursor-move text-slate-400 mt-1">≡</div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-semibold truncate">{title}</div>
+                            {isPendingDelete && <div className="text-xs text-rose-600">Will be removed</div>}
+                          </div>
+
+                          {/* Input or disabled placeholder when pending delete */}
+                          {isPendingDelete ? (
                             <input
-                              className="border rounded px-3 py-2 w-[420px] max-w-full"
-                              value={val}
+                              disabled
+                              value={deletedBuffer[activeTab as string]?.[plat] ?? ""}
+                              placeholder="(will be removed)"
+                              className="mt-2 border rounded px-3 py-2 w-[420px] max-w-full bg-rose-50 text-rose-700"
+                            />
+                          ) : (
+                            <input
+                              className="border rounded px-3 py-2 mt-2 w-[420px] max-w-full"
+                              value={String(val ?? "")}
                               onChange={(e) =>
                                 setProfile((prev) => ({
                                   ...prev,
@@ -524,61 +608,67 @@ export default function EditProfilePage() {
                                 }))
                               }
                             />
-                            <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
-                          </div>
-                        </div>
+                          )}
 
-                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!isPendingDelete && (
                           <button
                             title="Open"
-                            onClick={() => window.open(val, "_blank")}
+                            onClick={() => {
+                              const url = String(val ?? "");
+                              if (url) window.open(url, "_blank");
+                            }}
                             className="p-2 border rounded"
                           >
                             <ExternalLink size={14} />
                           </button>
+                        )}
 
+                        {/* If pending delete: show Undo; else show Delete */}
+                        {isPendingDelete ? (
                           <button
-                            title="Delete"
-                            onClick={() => deleteField(activeTab, plat)}
-                            className="p-2 bg-red-600 text-white rounded"
+                            title="Undo delete"
+                            onClick={() => undoDelete(activeTab, plat)}
+                            className="px-3 py-1 bg-yellow-400 text-white rounded"
                           >
+                            Undo
+                          </button>
+                        ) : (
+                          <button title="Delete" onClick={() => deleteField(activeTab, plat)} className="p-2 bg-red-600 text-white rounded">
                             Delete
                           </button>
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Buttons */}
-              <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
-                <button 
-                  onClick={() => setShowAddDialog(true)} 
-                  className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto"
-                >
-                  + Add Link
+            {error && <div className="text-red-600">{error}</div>}
+
+            {/* Buttons */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
+              <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto">
+                + Add Link
+              </button>
+
+              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded w-full md:w-auto">
+                  Cancel
                 </button>
 
-                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                  <button 
-                    onClick={() => (window.location.href = "/")} 
-                    className="px-4 py-2 border rounded w-full md:w-auto"
-                  >
-                    Cancel
-                  </button>
-
-                  <button 
-                    onClick={saveProfile} 
-                    disabled={saving} 
-                    className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto"
-                  >
-                    {saving ? "Saving..." : "Save & Continue"}
-                  </button>
-                </div>
+                <button onClick={saveProfile} disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto">
+                  {saving ? "Saving..." : "Save & Continue"}
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
         {/* Right: Fields library */}
         <div className="col-span-12 md:col-span-6 lg:col-span-3">
@@ -586,12 +676,7 @@ export default function EditProfilePage() {
             <h3 className="font-semibold mb-2">Fields</h3>
 
             <div className="mb-3">
-              <input
-                className="w-full border rounded px-3 py-2"
-                placeholder="Search platform"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <input className="w-full border rounded px-3 py-2" placeholder="Search platform" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
 
             <div className="space-y-2 max-h-[60vh] overflow-auto">
@@ -626,62 +711,62 @@ export default function EditProfilePage() {
           </div>
         </div>
 
-      {/* Add dialog */}
-      {showAddDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg w-[640px] p-6">
-            <h3 className="text-lg font-semibold mb-4">Add Link</h3>
+        {/* Add dialog */}
+        {showAddDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-lg w-[640px] p-6">
+              <h3 className="text-lg font-semibold mb-4">Add Link</h3>
 
-            <div className="mb-3">
-              <label className="block text-sm text-gray-600 mb-1">Platform</label>
-              <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)} className="w-full border rounded px-3 py-2">
-                <option value="">Choose platform</option>
-                {platforms.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="mb-3">
+                <label className="block text-sm text-gray-600 mb-1">Platform</label>
+                <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)} className="w-full border rounded px-3 py-2">
+                  <option value="">Choose platform</option>
+                  {platforms.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="mb-3">
-              <label className="block text-sm text-gray-600 mb-1">Value (URL / username / phone)</label>
-              <input className="w-full border rounded px-3 py-2" value={selectedValue} onChange={(e) => setSelectedValue(e.target.value)} />
-            </div>
+              <div className="mb-3">
+                <label className="block text-sm text-gray-600 mb-1">Value (URL / username / phone)</label>
+                <input className="w-full border rounded px-3 py-2" value={selectedValue} onChange={(e) => setSelectedValue(e.target.value)} />
+              </div>
 
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowAddDialog(false)} className="px-4 py-2 border rounded">
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (!selectedPlatform) return alert("Choose platform");
-                  const plat = platforms.find((p) => p.id === selectedPlatform);
-                  if (!plat) return alert("Invalid platform");
-                  if (plat.requires === "phone" && !isPhone(selectedValue) && !isPhone(digitsOnly(selectedValue))) {
-                    return alert("Please provide a valid phone number");
-                  }
-                  if (plat.requires === "url" && !isUrl(selectedValue)) {
-                    return alert("Please provide a valid URL (https://...)");
-                  }
-                  if (plat.requires === "text" && !selectedValue.trim()) {
-                    return alert("Value required");
-                  }
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowAddDialog(false)} className="px-4 py-2 border rounded">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!selectedPlatform) return alert("Choose platform");
+                    const plat = platforms.find((p) => p.id === selectedPlatform);
+                    if (!plat) return alert("Invalid platform");
+                    if (plat.requires === "phone" && !isPhone(selectedValue) && !isPhone(digitsOnly(selectedValue))) {
+                      return alert("Please provide a valid phone number");
+                    }
+                    if (plat.requires === "url" && !isUrl(selectedValue)) {
+                      return alert("Please provide a valid URL (https://...)");
+                    }
+                    if (plat.requires === "text" && !selectedValue.trim()) {
+                      return alert("Value required");
+                    }
 
-                  addPlatformToProfile(selectedPlatform, selectedValue);
-                  setShowAddDialog(false);
-                  setSelectedPlatform("");
-                  setSelectedValue("");
-                }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded"
-              >
-                Add
-              </button>
+                    addPlatformToProfile(selectedPlatform, selectedValue);
+                    setShowAddDialog(false);
+                    setSelectedPlatform("");
+                    setSelectedValue("");
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded"
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-  </div>
-</div>
+        )}
+      </div>
+    </div>
   );
 }
