@@ -138,7 +138,7 @@ export default function EditProfilePage() {
             other: normalizeSection(u.profile.other),
           });
         }
-        if (u.avatarUrl) setAvatarPreview(u.avatarUrl);
+        if (u.avatar) setAvatarPreview(u.avatar);
       } catch (err) {
         console.error(err);
         setError("Failed to load data");
@@ -365,10 +365,16 @@ export default function EditProfilePage() {
 
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
-
+      
       await api.put("/auth/update", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // تحديث الـ UI فورًا
+      if (avatarUrl) {
+        setAvatarPreview(avatarUrl);
+        setUser((prev: any) => ({ ...prev, avatar: avatarUrl }));
+      }
 
       // clear buffer for any items that were deleted (because backend applied)
       setDeletedBuffer((buf) => {
