@@ -402,7 +402,9 @@ export default function EditProfilePage() {
   
       // Clear deleted buffer
       setDeletedBuffer({});
-  
+      
+      window.location.href = `/qr/${newUser.qrCode || newUser.code}`;
+
       alert("Profile updated successfully!");
     } catch (err: any) {
       console.error(err);
