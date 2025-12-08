@@ -1,4 +1,4 @@
-// app/qr/[code]/page.tsx
+import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
 
@@ -13,16 +13,34 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
+// ⚡ لترتيب الأقسام
 const SECTIONS = [
-  { key: "social", title: "Social" },
   { key: "contact", title: "Contact" },
+  { key: "social", title: "Social" },
   { key: "payment", title: "Payment" },
-  { key: "video", title: "Videos" },
+  { key: "video", title: "Video" },
   { key: "music", title: "Music" },
   { key: "design", title: "Design" },
   { key: "gaming", title: "Gaming" },
   { key: "other", title: "Other" },
 ];
+
+// UI Component لعرض لينك واحد
+function LinkItem({ title, value }: { title: string; value: string }) {
+  return (
+    <a
+      href={value}
+      target="_blank"
+      className="flex items-center justify-between w-full p-3 bg-white border rounded-lg hover:bg-gray-50"
+    >
+      <div>
+        <div className="font-semibold text-gray-700">{title}</div>
+        <div className="text-xs text-gray-500 break-all">{String(value)}</div>
+      </div>
+      <span className="text-indigo-500 text-sm">Open</span>
+    </a>
+  );
+}
 
 export default async function Page({ params }: Props) {
   const code = params.code;
@@ -30,7 +48,7 @@ export default async function Page({ params }: Props) {
   try {
     const data = await fetchQr(code);
 
-    // ============= CASE 1 — QR NOT LINKED =============
+    // CASE 1 — QR NOT LINKED
     if (!data.user) {
       return (
         <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -55,74 +73,45 @@ export default async function Page({ params }: Props) {
       );
     }
 
+    // CASE 2 — QR LINKED
     const user = data.user;
     const profile = user.profile || {};
 
-    // ============= CASE 2 — QR LINKED =============
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-
-          {/* Avatar */}
-          <div className="flex justify-center">
-            {user.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                className="w-28 h-28 rounded-full object-cover border-4 border-purple-500 shadow"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-purple-600 text-white flex items-center justify-center text-4xl font-bold">
-                {user.name?.[0]?.toUpperCase() || "U"}
-              </div>
-            )}
-          </div>
-
-          {/* Name & Job */}
-          <div className="text-center mt-4">
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white p-6 rounded-xl shadow-lg max-w-lg w-full">
+          {/* Header */}
+          <div className="text-center mb-6">
             <h1 className="text-2xl font-bold">{user.name}</h1>
-            {user.job && (
-              <p className="text-gray-500 text-sm">{user.job}</p>
-            )}
-            {(user.phone || user.countryCode) && (
-              <p className="text-gray-600 text-sm mt-1">
+            <p className="text-gray-500 text-sm">{user.job}</p>
+
+            {user.phone && (
+              <p className="text-gray-600 mt-1">
                 {user.countryCode} {user.phone}
               </p>
             )}
           </div>
 
-          {/* Links Sections */}
-          <div className="mt-6 space-y-5">
+          {/* SECTIONS */}
+          <div className="space-y-6">
             {SECTIONS.map((sec) => {
               const entries = Object.entries(profile[sec.key] || {}).filter(
-                ([, v]) => v !== null && v !== ""
+                ([_, v]) => v !== null && String(v).trim() !== ""
               );
 
-              if (!entries.length) return null;
+              if (entries.length === 0) return null;
 
               return (
                 <div key={sec.key}>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                    {sec.title}
-                  </h3>
+                  <h3 className="text-sm font-bold text-gray-600 mb-2">{sec.title}</h3>
 
                   <div className="space-y-2">
                     {entries.map(([key, value]) => (
-                      <a
+                      <LinkItem
                         key={key}
-                        href={String(value)}
-                        target="_blank"
-                        className="flex items-center gap-3 border rounded-lg p-3 hover:bg-gray-50"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                          •
-                        </div>
-                        <div className="text-left">
-                          <div className="font-medium text-sm">{key}</div>
-                          <div className="text-gray-500 text-xs break-all">
-                            {String(value)}
-                          </div>
-                        </div>
-                      </a>
+                        title={key}
+                        value={String(value)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -130,8 +119,8 @@ export default async function Page({ params }: Props) {
             })}
           </div>
 
-          {/* Edit button (only if logged in user owns the QR) */}
-          <div className="mt-6">
+          {/* Edit Button */}
+          <div className="text-center mt-6">
             <EditButton />
           </div>
         </div>
