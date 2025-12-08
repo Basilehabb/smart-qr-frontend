@@ -336,24 +336,21 @@ export default function EditProfilePage() {
   async function saveProfile() {
     setError(null);
     setSaving(true);
-
-    // basic validation
+  
     if (!isEmail(email)) {
       setError("Invalid email");
       setSaving(false);
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("user-token");
       if (!token) return (window.location.href = "/login");
-
+  
       const avatarUrl = await uploadAvatarToServer();
-
-      // prepare payload: include nulls as-is so backend deletes those keys
-      // but ensure we send plain objects (no functions)
+  
       const cleanProfile = JSON.parse(JSON.stringify(profile));
-
+  
       const payload: any = {
         name,
         email,
@@ -362,40 +359,56 @@ export default function EditProfilePage() {
         countryCode,
         profile: cleanProfile,
       };
-
+  
       if (password) payload.password = password;
       if (avatarUrl) payload.avatar = avatarUrl;
-      
+  
+      // 1) Update
       await api.put("/auth/update", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // تحديث الـ UI فورًا
-      if (avatarUrl) {
-        setAvatarPreview(avatarUrl);
-        setUser((prev: any) => ({ ...prev, avatar: avatarUrl }));
-      }
-
-      // clear buffer for any items that were deleted (because backend applied)
-      setDeletedBuffer((buf) => {
-        // remove buffer entries that correspond to nulls in profile
-        const copy = { ...buf };
-        for (const sec of Object.keys(buf)) {
-          for (const key of Object.keys(buf[sec])) {
-            const pSec = (profile as any)[sec];
-            if (!pSec) {
-              delete copy[sec][key];
-              continue;
-            }
-            if (pSec[key] === null) {
-              delete copy[sec][key];
-            }
-          }
-          if (copy[sec] && Object.keys(copy[sec]).length === 0) delete copy[sec];
-        }
-        return copy;
+  
+      // 2) Fetch updated data (المهم جدا)
+      const updated = await api.get("/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
+  
+      const newUser = updated.data.user;
+  
+      // 3) Update UI
+      setUser(newUser);
+      setName(newUser.name || "");
+      setEmail(newUser.email || "");
+      setPhone(newUser.phone || "");
+      setJob(newUser.job || "");
+      setCountryCode(newUser.countryCode || "+20");
+  
+      setAvatarPreview(newUser.avatar || null);
+  
+      // 4) Rebuild profile with normalized values
+      const normalize = (sec: any) => {
+        const out: Record<string, string> = {};
+        if (!sec) return out;
+        for (const k of Object.keys(sec)) {
+          out[k] = sec[k] == null ? "" : String(sec[k]);
+        }
+        return out;
+      };
+  
+      setProfile({
+        social: normalize(newUser.profile.social),
+        contact: normalize(newUser.profile.contact),
+        payment: normalize(newUser.profile.payment),
+        video: normalize(newUser.profile.video),
+        music: normalize(newUser.profile.music),
+        design: normalize(newUser.profile.design),
+        gaming: normalize(newUser.profile.gaming),
+        other: normalize(newUser.profile.other),
+      });
+  
+      // 5) Clear deleted buffer (safe now)
+      setDeletedBuffer({});
+  
       alert("Profile updated");
     } catch (err: any) {
       console.error(err);
