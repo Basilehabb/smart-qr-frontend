@@ -396,24 +396,53 @@ export default function EditProfilePage() {
                   />
 
                   {/* Phone (with country code inside) */}
-                  <div className="flex items-center border rounded-l px-2 bg-white text-sm text-gray-600">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="bg-transparent outline-none text-sm"
-                    >
-                      <option value="+20">+20</option>
-                      <option value="+971">+971</option>
-                      <option value="+966">+966</option>
-                      <option value="+1">+1</option>
-                    </select>
+                  <div className="flex items-center w-full">
+                    {/* Country Code Box */}
+                    <div className="
+                        flex items-center 
+                        border border-gray-300 
+                        bg-gray-50 
+                        rounded-l-lg 
+                        px-2 
+                        h-[42px]
+                        text-sm text-gray-700
+                      ">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="
+                          bg-transparent 
+                          outline-none 
+                          cursor-pointer
+                          text-sm
+                        "
+                      >
+                        <option value="+20">+20</option>
+                        <option value="+971">+971</option>
+                        <option value="+966">+966</option>
+                        <option value="+1">+1</option>
+                      </select>
+                    </div>
+
+                    {/* Phone Input */}
+                    <input
+                      className="
+                        border border-gray-300 
+                        border-l-0 
+                        rounded-r-lg 
+                        px-3 
+                        h-[42px]
+                        w-full 
+                        text-sm 
+                        focus:outline-none 
+                        focus:ring-1 
+                        focus:ring-indigo-500
+                      "
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Phone number"
+                    />
                   </div>
-                  <input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Phone number"
-                    className="border border-l-0 rounded-r px-3 py-2 w-full text-sm"
-                  />
                 </div>
                 {/* Row 2 — Job + Password + Avatar */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
