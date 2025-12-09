@@ -583,83 +583,88 @@ async function saveProfile() {
                       onDragStart={(e) => handleDragStart(e, activeTab, plat)}
                       onDragOver={allowDrop}
                       onDrop={(e) => handleDrop(e, activeTab, plat)}
-                      className={`p-3 rounded border flex items-start justify-between gap-3 transition-opacity ${
-                        isPendingDelete ? "bg-rose-50 opacity-75 border-rose-200" : "bg-white"
-                      }`}
+                      className="
+                        p-4 
+                        rounded-lg 
+                        border 
+                        bg-white 
+                        flex 
+                        flex-col 
+                        gap-3 
+                        shadow-sm
+                      "
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="cursor-move text-slate-400 mt-1">≡</div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-semibold truncate">{title}</div>
-                            {isPendingDelete && <div className="text-xs text-rose-600">Will be removed</div>}
-                          </div>
-
-                          {/* Input or disabled placeholder when pending delete */}
-                          {isPendingDelete ? (
-                            <input
-                              disabled
-                              value={deletedBuffer[activeTab as string]?.[plat] ?? ""}
-                              placeholder="(will be removed)"
-                              className="mt-2 border rounded px-3 py-2 w-[420px] max-w-full bg-rose-50 text-rose-700"
-                            />
-                          ) : (
-                            <input
-                              className="border rounded px-3 py-2 mt-2 w-[420px] max-w-full"
-                              value={String(val ?? "")}
-                              onChange={(e) =>
-                                setProfile((prev) => ({
-                                  ...prev,
-                                  [activeTab]: { ...(prev as any)[activeTab], [plat]: e.target.value },
-                                }))
-                              }
-                            />
+                      {/* ---------- HEADER (Title + Actions) ---------- */}
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <div className="cursor-move text-gray-400 text-lg">≡</div>
+                          <span className="font-semibold text-gray-700">{title}</span>
+                          {isPendingDelete && (
+                            <span className="text-xs text-red-500">(will be removed)</span>
                           )}
-
-                          <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
+                        </div>
+                  
+                        {/* ACTION BUTTONS */}
+                        <div className="flex items-center gap-2">
+                          {!isPendingDelete && (
+                            <button
+                              title="Open"
+                              onClick={() => {
+                                const url = String(val ?? "");
+                                if (url) window.open(url, "_blank");
+                              }}
+                              className="p-2 border rounded hover:bg-gray-100 flex items-center justify-center"
+                            >
+                              <ExternalLink size={16} />
+                            </button>
+                          )}
+                  
+                          {isPendingDelete ? (
+                            <button
+                              title="Undo"
+                              onClick={() => undoDelete(activeTab, plat)}
+                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                            >
+                              Undo
+                            </button>
+                          ) : (
+                            <button
+                              title="Delete"
+                              onClick={() => deleteField(activeTab, plat)}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div
-                        className="
-                          flex 
-                          flex-col sm:flex-row        /* موبايل: تحت بعض — شاشات كبيرة: جنب بعض */
-                          items-center 
-                          gap-2 
-                          shrink-0 
-                        "
-                      >
-                        {!isPendingDelete && (
-                          <button
-                            title="Open"
-                            onClick={() => {
-                              const url = String(val ?? "");
-                              if (url) window.open(url, "_blank");
-                            }}
-                            className="p-2 border rounded w-full sm:w-auto"
-                          >
-                            <ExternalLink size={14} />
-                          </button>
-                        )}
-
-                        {isPendingDelete ? (
-                          <button
-                            title="Undo delete"
-                            onClick={() => undoDelete(activeTab, plat)}
-                            className="px-3 py-1 bg-yellow-400 text-white rounded w-full sm:w-auto"
-                          >
-                            Undo
-                          </button>
-                        ) : (
-                          <button
-                            title="Delete"
-                            onClick={() => deleteField(activeTab, plat)}
-                            className="p-2 bg-red-600 text-white rounded w-full sm:w-auto"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
+                  
+                      {/* ---------- INPUT FIELD ---------- */}
+                      {isPendingDelete ? (
+                        <input
+                          disabled
+                          value={deletedBuffer[activeTab]?.[plat] ?? ""}
+                          placeholder="(will be removed)"
+                          className="border rounded px-3 py-2 bg-red-50 text-red-700"
+                        />
+                      ) : (
+                        <input
+                          className="border rounded px-3 py-2 w-full"
+                          value={String(val ?? "")}
+                          onChange={(e) =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              [activeTab]: {
+                                ...(prev as any)[activeTab],
+                                [plat]: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      )}
+                  
+                      {/* ---------- CATEGORY LABEL ---------- */}
+                      <span className="text-xs text-gray-400">{platInfo?.category || "other"}</span>
                     </div>
                   );
                 })}
