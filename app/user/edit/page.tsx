@@ -332,87 +332,76 @@ export default function EditProfilePage() {
   }
   
   // Save
-  async function saveProfile() {
-    setError(null);
-    setSaving(true);
-  
-    if (!isEmail(email)) {
-      setError("Invalid email");
-      setSaving(false);
+async function saveProfile() {
+  setError(null);
+  setSaving(true);
+
+  if (!isEmail(email)) {
+    setError("Invalid email");
+    setSaving(false);
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("user-token");
+    if (!token) return (window.location.href = "/login");
+
+    const avatarUrl = await uploadAvatarToServer();
+
+    const cleanProfile: any = {};
+    for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
+      cleanProfile[section] = { ...profile[section] };
+    }
+
+    const payload: any = {
+      name,
+      email,
+      job,
+      phone,
+      countryCode,
+      profile: cleanProfile,
+    };
+
+    if (password) payload.password = password;
+    if (avatarUrl) payload.avatar = avatarUrl;
+
+    // update
+    await api.put("/auth/update", payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // fetch updated user
+    const updated = await api.get("/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const newUser = updated.data.user;
+
+    // UI update
+    setUser(newUser);
+
+    // 🔥🔥 IMPORTANT: decide redirect now!
+
+    // 1) check if user came from QR page
+    const params = new URLSearchParams(window.location.search);
+    const back = params.get("code");
+
+    if (back) {
+      // يرجعه لنفس QR اللي جه منه
+      window.location.href = `/qr/${back}`;
       return;
     }
-  
-    try {
-      const token = localStorage.getItem("user-token");
-      if (!token) return (window.location.href = "/login");
-  
-      const avatarUrl = await uploadAvatarToServer();
-  
-      // ⭐⭐⭐ Build profile object with EXACT order from UI state
-      const cleanProfile: any = {};
-  
-      for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
-        cleanProfile[section] = { ...profile[section] }; // نسخ مباشر بنفس الترتيب
-      }
-  
-      const payload: any = {
-        name,
-        email,
-        job,
-        phone,
-        countryCode,
-        profile: cleanProfile
-      };
-      
-      if (password) payload.password = password;
-      if (avatarUrl) payload.avatar = avatarUrl;
-  
-      // Update
-      await api.put("/auth/update", payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-  
-      // Fetch fresh data
-      const updated = await api.get("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-  
-      const newUser = updated.data.user;
-  
-      // Update UI with fresh data
-      setUser(newUser);
-      setName(newUser.name || "");
-      setEmail(newUser.email || "");
-      setPhone(newUser.phone || "");
-      setJob(newUser.job || "");
-      setCountryCode(newUser.countryCode || "+20");
-      setAvatarPreview(newUser.avatar || null);
-  
-      // ⭐ Update profile state with backend response
-      setProfile({
-        social: newUser.profile.social || {},
-        contact: newUser.profile.contact || {},
-        payment: newUser.profile.payment || {},
-        video: newUser.profile.video || {},
-        music: newUser.profile.music || {},
-        design: newUser.profile.design || {},
-        gaming: newUser.profile.gaming || {},
-        other: newUser.profile.other || {}
-      });
-  
-      // Clear deleted buffer
-      setDeletedBuffer({});
-      
-      window.location.href = `/qr/${newUser.qrCode || newUser.code}`;
 
-      alert("Profile updated successfully!");
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.response?.data?.message || "Failed to save");
-    } finally {
-      setSaving(false);
-    }
+    // 2) otherwise → ارجعه للـ QR الخاص بيه
+    window.location.href = `/qr/${newUser.code || newUser.qrCode}`;
+
+  } catch (err: any) {
+    console.error(err);
+    setError(err?.response?.data?.message || "Failed to save");
+  } finally {
+    setSaving(false);
   }
+}
 
   // small helper: platform title lookup when rendering preview list
   function getPlatformTitle(id: string) {
