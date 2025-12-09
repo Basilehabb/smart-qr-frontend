@@ -620,8 +620,15 @@ async function saveProfile() {
                           <div className="text-xs text-gray-400 mt-1">{platInfo?.category || "other"}</div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2 shrink-0 flex-wrap md:flex-nowrap">
+                      <div
+                        className="
+                          flex 
+                          flex-col sm:flex-row        /* موبايل: تحت بعض — شاشات كبيرة: جنب بعض */
+                          items-center 
+                          gap-2 
+                          shrink-0 
+                        "
+                      >
                         {!isPendingDelete && (
                           <button
                             title="Open"
@@ -629,23 +636,26 @@ async function saveProfile() {
                               const url = String(val ?? "");
                               if (url) window.open(url, "_blank");
                             }}
-                            className="p-2 border rounded"
+                            className="p-2 border rounded w-full sm:w-auto"
                           >
                             <ExternalLink size={14} />
                           </button>
                         )}
 
-                        {/* If pending delete: show Undo; else show Delete */}
                         {isPendingDelete ? (
                           <button
                             title="Undo delete"
                             onClick={() => undoDelete(activeTab, plat)}
-                            className="px-3 py-1 bg-yellow-400 text-white rounded"
+                            className="px-3 py-1 bg-yellow-400 text-white rounded w-full sm:w-auto"
                           >
                             Undo
                           </button>
                         ) : (
-                          <button title="Delete" onClick={() => deleteField(activeTab, plat)} className="p-2 bg-red-600 text-white rounded">
+                          <button
+                            title="Delete"
+                            onClick={() => deleteField(activeTab, plat)}
+                            className="p-2 bg-red-600 text-white rounded w-full sm:w-auto"
+                          >
                             Delete
                           </button>
                         )}
