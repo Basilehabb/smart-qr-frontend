@@ -347,7 +347,7 @@ export default function UserDetailsPage() {
 
       // ⭐ Use the new endpoint for profile updates
       const response = await api.put(
-        `/admin/users/${userId}/profile`,
+        `/admin/users/${userId}`,
         {
           ...editData,
           profile: cleanProfile,
