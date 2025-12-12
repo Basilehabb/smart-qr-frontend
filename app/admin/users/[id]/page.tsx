@@ -345,8 +345,9 @@ export default function UserDetailsPage() {
         cleanProfile[section] = { ...profile[section] };
       }
 
-      const response = await api.patch(
-        `/admin/users/${userId}`,
+      // ⭐ Use the new endpoint for profile updates
+      const response = await api.put(
+        `/admin/users/${userId}/profile`,
         {
           ...editData,
           profile: cleanProfile,
