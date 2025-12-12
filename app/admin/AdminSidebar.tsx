@@ -7,13 +7,21 @@ export default function AdminSidebar() {
   const router = useRouter();
 
   const menu = [
-    { title: "Dashboard", path: "/admin/dashboard" },
-    { title: "Users", path: "/admin/users" },
-    { title: "QR Codes", path: "/admin/qrs" },
-    { title: "Scan Analytics", path: "/admin/scan-analytics" },
+    { title: "Dashboard", path: "/admin/dashboard", icon: "📊" },
+    { title: "Users", path: "/admin/users", icon: "👥" },
+    { title: "Bulk Upload", path: "/admin/users/bulk-upload", icon: "📤" },
+    { title: "QR Codes", path: "/admin/qrs", icon: "📱" },
+    { title: "Scan Analytics", path: "/admin/scan-analytics", icon: "📈" },
   ];
 
-  const isActive = (path: string) => pathname.startsWith(path);
+  const isActive = (path: string) => {
+    // Exact match for bulk-upload to prevent conflicts
+    if (path === "/admin/users/bulk-upload") {
+      return pathname === path;
+    }
+    // For other paths, use startsWith
+    return pathname.startsWith(path);
+  };
 
   const logout = () => {
     localStorage.removeItem("admin-token");
@@ -29,27 +37,25 @@ export default function AdminSidebar() {
           <Link
             key={item.path}
             href={item.path}
-            className={`block px-3 py-2 rounded ${
+            className={`block px-3 py-2 rounded flex items-center gap-2 ${
               isActive(item.path)
                 ? "bg-blue-600 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
-            {item.title}
+            <span>{item.icon}</span>
+            <span>{item.title}</span>
           </Link>
         ))}
       </nav>
 
       <button
         onClick={logout}
-        className="mt-4 px-3 py-2 w-full border rounded text-red-600 hover:bg-red-50"
+        className="mt-4 px-3 py-2 w-full border rounded text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
       >
-        Logout
+        <span>🚪</span>
+        <span>Logout</span>
       </button>
     </div>
   );
 }
-
-<Link href="/admin/users/bulk-upload">
-  📤 Bulk Upload
-</Link>
