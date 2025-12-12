@@ -49,3 +49,7 @@ export default function AdminSidebar() {
     </div>
   );
 }
+
+<Link href="/admin/users/bulk-upload">
+  📤 Bulk Upload
+</Link>
