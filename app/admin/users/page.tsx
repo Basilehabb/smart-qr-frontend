@@ -53,6 +53,17 @@ export default function AdminUsersPage() {
     if (q.page) setPage(Number(q.page));
     if (q.limit) setLimit(Number(q.limit));
 
+    // Auto-run search with debounce
+useEffect(() => {
+  const delay = setTimeout(() => {
+    fetchUsers({ search, page: 1 });
+  }, 400);
+
+  return () => clearTimeout(delay);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [search]);
+
+
     fetchUsers(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -209,7 +220,10 @@ export default function AdminUsersPage() {
               className="border px-3 py-2 rounded w-full mb-4"
               placeholder="Search users..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // always go to first page on search
+              }}
             />
 
             <div className="bg-white rounded shadow">
