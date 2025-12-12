@@ -113,26 +113,48 @@ export default function UserDetailsPage() {
           avatar: foundUser.avatar || "",
         });
 
-        // Load profile
+        // Load profile with better normalization
         if (foundUser.profile) {
           const normalizeSection = (sec: any) => {
             if (!sec) return {};
-            if (typeof sec.entries === "function") {
+            
+            // Check if it's already a plain object
+            if (sec && typeof sec === 'object' && !Array.isArray(sec)) {
               const out: Record<string, string> = {};
-              for (const [k, v] of sec.entries()) {
-                out[k] = String(v);
+              
+              // Handle Map-like objects
+              if (typeof sec.entries === "function") {
+                try {
+                  for (const [k, v] of sec.entries()) {
+                    if (k && v !== null && v !== undefined) {
+                      out[k] = String(v);
+                    }
+                  }
+                } catch (e) {
+                  console.error("Error iterating entries:", e);
+                }
+              } else {
+                // Handle plain objects
+                try {
+                  const keys = Object.keys(sec);
+                  for (const k of keys) {
+                    const val = sec[k];
+                    if (k && val !== null && val !== undefined && typeof val !== 'object') {
+                      out[k] = String(val);
+                    }
+                  }
+                } catch (e) {
+                  console.error("Error processing object:", e);
+                }
               }
+              
               return out;
             }
-            const out: Record<string, string> = {};
-            for (const k of Object.keys(sec)) {
-              const val = (sec as any)[k];
-              out[k] = val == null ? "" : String(val);
-            }
-            return out;
+            
+            return {};
           };
 
-          setProfile({
+          const loadedProfile = {
             social: normalizeSection(foundUser.profile.social),
             contact: normalizeSection(foundUser.profile.contact),
             payment: normalizeSection(foundUser.profile.payment),
@@ -141,7 +163,10 @@ export default function UserDetailsPage() {
             design: normalizeSection(foundUser.profile.design),
             gaming: normalizeSection(foundUser.profile.gaming),
             other: normalizeSection(foundUser.profile.other),
-          });
+          };
+
+          console.log("Loaded profile:", loadedProfile);
+          setProfile(loadedProfile);
         }
 
         // Get QRs
@@ -314,26 +339,32 @@ export default function UserDetailsPage() {
       return alert("Invalid email");
     }
 
-    const cleanProfile: any = {};
-    for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
-      cleanProfile[section] = { ...profile[section] };
-    }
-
-    await api.patch(
-      `/admin/users/${userId}`,
-      {
-        ...editData,
-        profile: cleanProfile,
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    try {
+      const cleanProfile: any = {};
+      for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
+        cleanProfile[section] = { ...profile[section] };
       }
-    );
 
-    alert("User updated successfully");
+      const response = await api.patch(
+        `/admin/users/${userId}`,
+        {
+          ...editData,
+          profile: cleanProfile,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    setUser({ ...user, ...editData, profile: cleanProfile });
-    setIsEditing(false);
+      alert("User updated successfully");
+
+      // Reload the page to fetch fresh data
+      window.location.reload();
+      
+    } catch (error: any) {
+      console.error("Save error:", error);
+      alert(error?.response?.data?.message || "Failed to save user");
+    }
   };
 
   const createQRForUser = async () => {
