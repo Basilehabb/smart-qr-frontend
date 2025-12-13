@@ -39,7 +39,6 @@ export default function AdminUsersPage() {
   const [newJob, setNewJob] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  // read initial query params on mount
   useEffect(() => {
     const q = buildQueryFromURL();
     if (q.search) setSearch(String(q.search));
@@ -52,18 +51,7 @@ export default function AdminUsersPage() {
     if (q.sort) setSort(String(q.sort));
     if (q.page) setPage(Number(q.page));
     if (q.limit) setLimit(Number(q.limit));
-
-    // Auto-run search with debounce
-useEffect(() => {
-  const delay = setTimeout(() => {
-    fetchUsers({ search, page: 1 });
-  }, 400);
-
-  return () => clearTimeout(delay);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [search]);
-
-
+  
     fetchUsers(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
