@@ -1,228 +1,298 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import AdminSidebar from "../../AdminSidebar";
+export default function SmartCodePage({ params }: any) {
+  const qrCode = params.code;
+  const targetURL = `https://smart-qr-frontend.vercel.app/qr/${qrCode}`;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [qrGenerated, setQrGenerated] = useState(false);
 
-export default function AdminQRDetails({ params }: any) {
-  const { code } = params;
-  const router = useRouter();
-
-  const [qr, setQr] = useState<any>(null);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [writing, setWriting] = useState(false);
-
-  // ==========================
-  // Load QR + Scan Logs
-  // ==========================
   useEffect(() => {
-    const token = localStorage.getItem("admin-token");
-    if (!token) return router.push("/login");
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, targetURL, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#4F46E5",
+          light: "#FFFFFF",
+        },
+      }).then(() => setQrGenerated(true));
+    }
+  }, [targetURL]);
 
-    (async () => {
-      try {
-        // 1) load QR list
-        const res = await api.get(`/admin/qrs`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const found = res.data.find((q: any) => q.code === code);
-        setQr(found);
-
-        // 2) load scan logs
-        const logsRes = await api.get("/admin/scan-analytics", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setLogs(logsRes.data.filter((l: any) => l.code === code));
-      } catch (err) {
-        console.error(err);
-        router.push("/admin/qrs");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [code, router]);
-
-  // ==========================
-  // Write NFC (QR URL)
-  // ==========================
-  const writeNFC = async () => {
-    try {
-      if (!("NDEFWriter" in window)) {
-        alert("NFC غير مدعوم على الجهاز ده (Android Chrome فقط).");
-        return;
-      }
-
-      setWriting(true);
-
-      const publicUrl = `https://smart-qr-frontend.vercel.app/qr/${qr.code}`;
-
-      const writer = new (window as any).NDEFWriter();
-      await writer.write({
-        records: [
-          {
-            recordType: "url",
-            data: publicUrl,
-          },
-        ],
-      });
-
-      alert("✅ تم كتابة اللينك على NFC بنجاح");
-    } catch (err) {
-      console.error("NFC write error:", err);
-      alert("❌ فشل كتابة NFC");
-    } finally {
-      setWriting(false);
+  const downloadQR = () => {
+    if (canvasRef.current) {
+      const link = document.createElement("a");
+      link.download = `QR-${qrCode}.png`;
+      link.href = canvasRef.current.toDataURL();
+      link.click();
     }
   };
 
-  // ==========================
-  // Delete QR
-  // ==========================
-  const deleteQR = async () => {
-    if (!confirm("Delete this QR?")) return;
-
-    const token = localStorage.getItem("admin-token");
-
-    await api.delete(`/admin/qrs/${code}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    router.push("/admin/qrs");
+  const openNFCTools = () => {
+    // محاولة فتح التطبيق مباشرة
+    window.location.href = `nfctools://write?url=${encodeURIComponent(targetURL)}`;
+    
+    // لو التطبيق مش مثبت، فتح Play Store بعد 1.5 ثانية
+    setTimeout(() => {
+      window.open('https://play.google.com/store/apps/details?id=com.wakdev.wdnfc', '_blank');
+    }, 1500);
   };
 
-  // ==========================
-  // Unlink QR
-  // ==========================
-  const unlinkQR = async () => {
-    if (!confirm("Unlink this QR from user?")) return;
-
-    const token = localStorage.getItem("admin-token");
-
-    await api.patch(
-      `/admin/qrs/${code}/unlink`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    setQr((prev: any) => ({ ...prev, userId: null }));
+  const copyURL = () => {
+    navigator.clipboard.writeText(targetURL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return <p className="text-center mt-20">Loading...</p>;
-
-  if (!qr)
-    return (
-      <div className="flex min-h-screen">
-        <AdminSidebar />
-        <div className="p-6 text-center">
-          <h2 className="text-xl font-semibold">QR Not Found</h2>
-        </div>
-      </div>
-    );
+  const printQR = () => {
+    window.print();
+  };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <AdminSidebar />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="text-center py-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+            📱 Smart Code Generator
+          </h1>
+          <p className="text-gray-600">QR Code: <code className="bg-white px-3 py-1 rounded text-indigo-600 font-mono">{qrCode}</code></p>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-
-          <h1 className="text-2xl font-bold">QR: {qr.code}</h1>
-
-          <div className="bg-white p-5 rounded shadow space-y-4">
-            <h2 className="text-lg font-semibold">QR Information</h2>
-
-            <p>
-              <strong>Code:</strong> {qr.code}
+        <div className="grid md:grid-cols-2 gap-6">
+          
+          {/* QR Code Section */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">📊</span>
+              <h2 className="text-2xl font-bold text-gray-800">QR Code</h2>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              امسح الكود من أي موبايل - يشتغل على iOS و Android
             </p>
 
-            <p>
-              <strong>Public URL:</strong>{" "}
-              <a
-                href={`/qr/${qr.code}`}
-                target="_blank"
-                className="text-blue-600 underline"
-              >
-                /qr/{qr.code}
-              </a>
-            </p>
-
-            <p>
-              <strong>Linked User:</strong>{" "}
-              {qr.userId ? (
-                <span className="text-green-600 font-medium">
-                  {qr.userId.name} ({qr.userId.email})
-                </span>
-              ) : (
-                <span className="text-gray-500">Not Linked</span>
+            {/* QR Canvas */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl mb-4 flex justify-center items-center min-h-[320px]">
+              {!qrGenerated && (
+                <div className="text-center">
+                  <div className="animate-spin text-4xl mb-2">⏳</div>
+                  <p className="text-gray-600">جاري إنشاء QR Code...</p>
+                </div>
               )}
-            </p>
+              <canvas 
+                ref={canvasRef} 
+                className={qrGenerated ? "opacity-100 transition-opacity duration-500" : "opacity-0"}
+              />
+            </div>
 
-            <div className="flex gap-2 pt-4 flex-wrap">
-              <a
-                href={`/qr/${qr.code}`}
-                target="_blank"
-                className="px-4 py-2 bg-blue-600 rounded text-white"
-              >
-                Open Public View
-              </a>
-
+            {/* QR Actions */}
+            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={writeNFC}
-                disabled={writing}
-                className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-60"
+                onClick={downloadQR}
+                disabled={!qrGenerated}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {writing ? "Writing NFC..." : "Write NFC"}
+                <span className="text-xl">💾</span>
+                تحميل
               </button>
-
-              {qr.userId && (
-                <button
-                  onClick={unlinkQR}
-                  className="px-4 py-2 bg-yellow-500 text-white rounded"
-                >
-                  Unlink
-                </button>
-              )}
-
               <button
-                onClick={deleteQR}
-                className="px-4 py-2 bg-red-600 text-white rounded"
+                onClick={printQR}
+                disabled={!qrGenerated}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete
+                <span className="text-xl">🖨️</span>
+                طباعة
               </button>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <p className="font-semibold mb-1">💡 نصيحة:</p>
+              <p className="text-xs">اطبع QR Code على استيكر أو ورق ولزقه - أسهل وأرخص من NFC!</p>
             </div>
           </div>
 
-          {/* Scan Logs */}
-          <div className="bg-white p-5 rounded shadow">
-            <h2 className="text-lg font-semibold mb-3">Scan History</h2>
+          {/* NFC Section */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">📱</span>
+              <h2 className="text-2xl font-bold text-gray-800">NFC Tag</h2>
+            </div>
 
-            {logs.length === 0 && (
-              <p className="text-gray-500">No scans yet.</p>
-            )}
+            <p className="text-sm text-gray-600 mb-4">
+              اكتب الرابط على بطاقة NFC باستخدام تطبيق مجاني
+            </p>
 
-            <ul className="space-y-2">
-              {logs.map((log, i) => (
-                <li key={i} className="border-b pb-2">
-                  <p>
-                    <strong>At:</strong>{" "}
-                    {new Date(log.scannedAt).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <strong>User Agent:</strong> {log.userAgent}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            {/* NFC Illustration */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-xl mb-4 text-center min-h-[320px] flex flex-col justify-center">
+              <div className="text-6xl mb-4 animate-pulse">📲</div>
+              <h3 className="font-bold text-lg text-gray-800 mb-2">NFC Tools App</h3>
+              <p className="text-sm text-gray-600 mb-4">تطبيق مجاني لكتابة بطاقات NFC</p>
+              
+              <div className="space-y-2 text-xs text-left bg-white/80 p-4 rounded-lg">
+                <p className="flex items-start gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>مجاني بالكامل</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>سهل الاستخدام</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>يدعم كل أنواع بطاقات NFC</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>أكثر من 10 مليون تحميل</span>
+                </p>
+              </div>
+            </div>
+
+            {/* NFC Action */}
+            <button
+              onClick={openNFCTools}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 active:scale-95 transition-all shadow-lg"
+            >
+              <span className="text-2xl">📲</span>
+              فتح NFC Tools
+            </button>
+
+            <div className="mt-4 p-3 bg-purple-50 rounded-lg text-sm text-purple-700">
+              <p className="font-semibold mb-2">📝 الخطوات:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>اضغط على زر "فتح NFC Tools"</li>
+                <li>لو التطبيق مش مثبت، هيفتح Play Store</li>
+                <li>في التطبيق: Write → Add Record → URL</li>
+                <li>الصق الرابط من الأسفل</li>
+                <li>قرّب بطاقة NFC واكتب</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        {/* URL Section */}
+        <div className="bg-white p-6 rounded-2xl shadow-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-2xl">🔗</span>
+            <h2 className="text-2xl font-bold text-gray-800">الرابط</h2>
+          </div>
+          
+          <div className="flex gap-2">
+            <input
+              value={targetURL}
+              readOnly
+              className="flex-1 border-2 border-gray-200 px-4 py-3 rounded-xl bg-gray-50 text-sm font-mono focus:outline-none focus:border-indigo-400"
+            />
+            <button
+              onClick={copyURL}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 ${
+                copied
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+              }`}
+            >
+              {copied ? (
+                <span className="flex items-center gap-2">
+                  <span>✓</span>
+                  <span className="hidden sm:inline">تم النسخ</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span>📋</span>
+                  <span className="hidden sm:inline">نسخ</span>
+                </span>
+              )}
+            </button>
           </div>
 
+          <p className="text-xs text-gray-500 mt-3 text-center">
+            انسخ هذا الرابط والصقه في تطبيق NFC Tools
+          </p>
         </div>
+
+        {/* Comparison Table */}
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-xl text-white">
+          <h3 className="text-2xl font-bold mb-4 text-center">⚖️ المقارنة</h3>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white/10 backdrop-blur p-4 rounded-xl">
+              <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <span>📊</span> QR Code
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-300">✓</span>
+                  <span>يشتغل على أي موبايل</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-300">✓</span>
+                  <span>مجاني - اطبعه على ورق</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-300">✓</span>
+                  <span>يدعم iOS و Android</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-300">⚠</span>
+                  <span>محتاج يفتح الكاميرا</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur p-4 rounded-xl">
+              <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <span>📱</span> NFC Tag
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-300">✓</span>
+                  <span>سريع جداً - لمسة واحدة</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-300">✓</span>
+                  <span>أنيق ومحترف</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-300">⚠</span>
+                  <span>محتاج بطاقات NFC (~$0.50)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-yellow-300">⚠</span>
+                  <span>Android فقط (غالباً)</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-center mt-4 text-sm opacity-90">
+            💡 <strong>نصيحة:</strong> استخدم QR Code للبداية - أسهل وأرخص!
+          </p>
+        </div>
+
       </div>
+
+      {/* Print Styles */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          canvas, canvas * {
+            visibility: visible;
+          }
+          canvas {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+          }
+        }
+      `}</style>
     </div>
   );
 }
