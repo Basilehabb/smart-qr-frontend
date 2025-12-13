@@ -458,13 +458,6 @@ export default function UserDetailsPage() {
                 <button className="mt-3 px-4 py-2 bg-purple-600 text-white rounded" onClick={resetPassword}>
                   Reset Password
                 </button>
-                
-                <button
-                className="px-4 py-2 bg-purple-600 text-white rounded"
-                onClick={() => router.push(`/admin/users/${userId}/nfc`)}
-              >
-                Write NFC for this User
-              </button>
 
                 <button className="mt-4 px-4 py-2 bg-red-600 text-white rounded" onClick={deleteUser}>
                   Delete User

@@ -12,6 +12,7 @@ export default function AdminQRDetails({ params }: any) {
   const [qr, setQr] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [writing, setWriting] = useState(false);
 
   // ==========================
   // Load QR + Scan Logs
@@ -44,6 +45,39 @@ export default function AdminQRDetails({ params }: any) {
       }
     })();
   }, [code, router]);
+
+  // ==========================
+  // Write NFC (QR URL)
+  // ==========================
+  const writeNFC = async () => {
+    try {
+      if (!("NDEFWriter" in window)) {
+        alert("NFC غير مدعوم على الجهاز ده (Android Chrome فقط).");
+        return;
+      }
+
+      setWriting(true);
+
+      const publicUrl = `https://smart-qr-frontend.vercel.app/qr/${qr.code}`;
+
+      const writer = new (window as any).NDEFWriter();
+      await writer.write({
+        records: [
+          {
+            recordType: "url",
+            data: publicUrl,
+          },
+        ],
+      });
+
+      alert("✅ تم كتابة اللينك على NFC بنجاح");
+    } catch (err) {
+      console.error("NFC write error:", err);
+      alert("❌ فشل كتابة NFC");
+    } finally {
+      setWriting(false);
+    }
+  };
 
   // ==========================
   // Delete QR
@@ -103,8 +137,19 @@ export default function AdminQRDetails({ params }: any) {
           <div className="bg-white p-5 rounded shadow space-y-4">
             <h2 className="text-lg font-semibold">QR Information</h2>
 
-            <p className="text-gray-800">
+            <p>
               <strong>Code:</strong> {qr.code}
+            </p>
+
+            <p>
+              <strong>Public URL:</strong>{" "}
+              <a
+                href={`/qr/${qr.code}`}
+                target="_blank"
+                className="text-blue-600 underline"
+              >
+                /qr/{qr.code}
+              </a>
             </p>
 
             <p>
@@ -118,7 +163,7 @@ export default function AdminQRDetails({ params }: any) {
               )}
             </p>
 
-            <div className="flex gap-2 pt-4">
+            <div className="flex gap-2 pt-4 flex-wrap">
               <a
                 href={`/qr/${qr.code}`}
                 target="_blank"
@@ -126,6 +171,14 @@ export default function AdminQRDetails({ params }: any) {
               >
                 Open Public View
               </a>
+
+              <button
+                onClick={writeNFC}
+                disabled={writing}
+                className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-60"
+              >
+                {writing ? "Writing NFC..." : "Write NFC"}
+              </button>
 
               {qr.userId && (
                 <button
