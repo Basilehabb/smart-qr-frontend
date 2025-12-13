@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 
 export default function SmartCodePage({ params }: any) {
   const qrCode = params.code;
-  const targetURL = `https://smart-qr-frontend.vercel.app/qr/${qrCode}`;
+  const targetURL = `https://loly-for-accessories.vercel.app/qr/${qrCode}`;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [qrGenerated, setQrGenerated] = useState(false);
