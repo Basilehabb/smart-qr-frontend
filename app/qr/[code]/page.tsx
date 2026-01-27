@@ -93,14 +93,43 @@ export default async function Page({ params }: Props) {
   const code = params.code;
   const data = await fetchQr(code);
 
+  /* ================= CASE: QR NOT LINKED ================= */
   if (!data.user) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100">
-        <LoginToLinkButton code={code} />
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
+          <h2 className="text-xl font-semibold mb-2">
+            هذا الـ QR غير مربوط
+          </h2>
+
+          <p className="text-gray-600 mb-6">
+            يمكنك إنشاء حساب جديد أو تسجيل الدخول لربط هذا الـ QR.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {/* Register */}
+            <a
+              href={`/register?code=${code}`}
+              className="
+                w-full px-4 py-3
+                rounded-lg
+                bg-purple-600 text-white
+                font-medium
+                hover:bg-purple-700 transition
+              "
+            >
+              Create Account & Link QR
+            </a>
+
+            {/* Login */}
+            <LoginToLinkButton code={code} />
+          </div>
+        </div>
       </main>
     );
   }
 
+  /* ================= CASE: QR LINKED ================= */
   const user = data.user;
   const profile = user.profile || {};
 
@@ -140,7 +169,6 @@ export default async function Page({ params }: Props) {
               className="w-full h-[90px]"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* white right */}
               <path
                 d="M 214.7168,6.1113281
                    C 195.65271,5.9023124 172.37742,11.948182
@@ -154,7 +182,6 @@ export default async function Page({ params }: Props) {
                 fill="white"
               />
 
-              {/* white left */}
               <path
                 d="M 0,35.773438 V 58 H 65
                    L 64.97852,57
@@ -164,7 +191,6 @@ export default async function Page({ params }: Props) {
                 fill="white"
               />
 
-              {/* purple wave */}
               <path
                 d="m 0,16.7221 v 19.052
                    C 45.4067,63.7643
