@@ -73,7 +73,7 @@ function LinkItem({
       target="_blank"
       rel="noopener noreferrer"
       className="
-        flex items-center justify-center gap-2
+        flex items-center gap-3
         w-full px-6 py-3
         rounded-full
         bg-gradient-to-r from-purple-600 to-purple-700
@@ -83,10 +83,10 @@ function LinkItem({
         transition-all duration-200
       "
     >
-      <div className="text-xl">
+      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-lg flex-shrink-0">
         {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
       </div>
-      <span>{title}</span>
+      <span className="text-left flex-1">{title}</span>
     </a>
   );
 }
@@ -140,26 +140,21 @@ export default async function Page({ params }: Props) {
 
           {/* ===== Header with Cover and Wave ===== */}
           <div className="relative">
-            {/* Cover Image */}
+            {/* Cover Image - without avatar */}
             <div className="h-48 w-full overflow-hidden bg-gradient-to-br from-orange-200 via-yellow-200 to-orange-300">
-              <img
-                src={user.avatar || "/cover-placeholder.jpg"}
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
             </div>
 
-            {/* Purple Wave */}
+            {/* Purple Wave - matching HiHello style */}
             <div className="absolute bottom-0 w-full">
               <svg
                 className="w-full"
-                viewBox="0 0 1440 100"
+                viewBox="0 0 1440 120"
                 preserveAspectRatio="none"
-                style={{ height: '80px' }}
+                style={{ height: '100px' }}
               >
                 <path
-                  fill="#ffffff"
-                  d="M0,50 Q360,100 720,50 T1440,50 L1440,100 L0,100 Z"
+                  fill="#7c3aed"
+                  d="M0,60 C240,100 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z"
                 />
               </svg>
             </div>
@@ -170,7 +165,7 @@ export default async function Page({ params }: Props) {
                 <img
                   src={user.avatar}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover"
+                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover bg-white"
                 />
               </div>
             </div>
@@ -180,11 +175,11 @@ export default async function Page({ params }: Props) {
           <div className="pt-16 px-6 pb-6">
             {/* Name and Job */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
                 {user.name}
               </h1>
               {user.job && (
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-sm font-normal">
                   {user.job}
                 </p>
               )}
@@ -202,33 +197,10 @@ export default async function Page({ params }: Props) {
               ))}
             </div>
 
-            {/* Save Contact Button */}
-            <button className="
-              w-full py-3 px-6
-              bg-gradient-to-r from-purple-600 to-purple-700
-              hover:from-purple-700 hover:to-purple-800
-              text-white font-semibold rounded-full
-              shadow-md hover:shadow-lg
-              transition-all duration-200
-              flex items-center justify-center gap-2
-            ">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              SAVE CONTACT
-            </button>
-
             {/* Edit Button */}
             <div className="text-center mt-4">
               <EditButton />
             </div>
-          </div>
-
-          {/* ===== Footer ===== */}
-          <div className="bg-gradient-to-r from-purple-600 to-purple-700 py-3 text-center">
-            <p className="text-white text-xs">
-              A free digital business card from HiHello
-            </p>
           </div>
         </div>
       </main>
