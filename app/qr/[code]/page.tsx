@@ -1,7 +1,6 @@
 import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
-
 import {
   FaWhatsapp,
   FaInstagram,
@@ -27,7 +26,6 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
-/* ===== Platform titles ===== */
 const PLATFORM_TITLES: Record<string, string> = {
   whatsapp: "WhatsApp",
   instagram: "Instagram",
@@ -41,7 +39,6 @@ const PLATFORM_TITLES: Record<string, string> = {
   email: "Email",
 };
 
-/* ===== Platform icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   whatsapp: <FaWhatsapp />,
   instagram: <FaInstagram />,
@@ -57,7 +54,6 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   other: <FaLink />,
 };
 
-/* ===== Link Row ===== */
 function LinkItem({
   title,
   value,
@@ -72,18 +68,11 @@ function LinkItem({
       href={value}
       target="_blank"
       rel="noopener noreferrer"
-      className="
-        flex items-center gap-3
-        w-full px-6 py-3
-        rounded-full
-        bg-gradient-to-r from-purple-600 to-purple-700
-        hover:from-purple-700 hover:to-purple-800
-        text-white font-medium
-        shadow-md hover:shadow-lg
-        transition-all duration-200
-      "
+      className="flex items-center gap-3 w-full px-6 py-3 rounded-full
+      bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium
+      shadow-md hover:shadow-lg transition"
     >
-      <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg shrink-0">
+      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
         {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
       </div>
       <span className="flex-1 text-left">{title}</span>
@@ -92,154 +81,88 @@ function LinkItem({
 }
 
 export default async function Page({ params }: Props) {
-  const code = params.code;
+  const data = await fetchQr(params.code);
 
-  try {
-    const data = await fetchQr(code);
-
-    /* ===== QR not linked ===== */
-    if (!data.user) {
-      return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-          <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
-            <h2 className="text-xl font-semibold mb-2">
-              هذا الـ QR غير مربوط
-            </h2>
-            <p className="text-gray-600 mb-6">
-              يمكنك تسجيل حساب جديد أو تسجيل دخول لربط هذا QR.
-            </p>
-
-            <div className="flex justify-center gap-4">
-              <a
-                href={`/register?code=${code}`}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-              >
-                Register & Link
-              </a>
-              <LoginToLinkButton code={code} />
-            </div>
-          </div>
-        </main>
-      );
-    }
-
-    const user = data.user;
-    const profile = user.profile || {};
-
-    const allLinks = Object.entries(profile).flatMap(([_, group]) =>
-      Object.entries(group || {}).filter(
-        ([_, v]) => v && String(v).trim() !== ""
-      )
-    );
-
+  if (!data.user) {
     return (
-      <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-lg w-full max-w-md md:max-w-lg overflow-hidden">
-
-          {/* ================= HEADER ================= */}
-          <div className="relative h-[300px] md:h-[360px] overflow-hidden">
-
-            {/* Cover Image */}
-            <img
-              src={user.avatar || "/cover-placeholder.jpg"}
-              alt="Cover"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-
-            {/* Purple overlay */}
-            <div className="absolute inset-0 bg-purple-600/25" />
-
-            {/* Purple wave (أعرض من الكارت عشان ما يتقصش) */}
-            <div className="absolute bottom-0 left-0 w-full z-20 translate-y-[6px]">
-              <svg
-                viewBox="0 0 246 57"
-                preserveAspectRatio="none"
-                className="w-[120%] -ml-[10%] h-[70px] md:h-[90px]"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="m 0,16.7221 v 19.052
-                     C 45.4067,63.7643 82.6667,65.4583 137.873,32.5286
-                     193.08,-0.401184 219.54,3.87965 246,11.4535
-                     V 6.51403
-                     C 185.24,-16.8661 135.913,29.331 97.6933,40.8564
-                     59.4733,52.3818 33.6467,44.1494 0,16.7221 Z"
-                  fill="#8F60DE"
-                />
-              </svg>
-            </div>
-
-            {/* White cut wave */}
-            <div className="absolute bottom-0 left-0 w-full z-30">
-              <svg
-                viewBox="0 0 246 57"
-                preserveAspectRatio="none"
-                className="w-full h-[55px] md:h-[70px]"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M 214.7168,6.1113281
-                     C 195.65271,5.9023124 172.37742,11.948182 137.87305,32.529297
-                     110.16613,49.05604 86.980345,56.862784 65.015625,57
-                     H 65 v 1 H 246 V 11.453125
-                     C 236.0775,8.6129313 226.15525,6.2367376 214.7168,6.1113281 Z"
-                  fill="white"
-                />
-                <path
-                  d="M 0,35.773438 V 58 H 65
-                     L 64.97852,57
-                     C 43.192081,57.127508 22.605139,49.707997 0,35.773438 Z"
-                  fill="white"
-                />
-              </svg>
-            </div>
-
-          </div>
-          {/* =============== END HEADER =============== */}
-
-          {/* ================= CONTENT ================= */}
-          <div className="px-6 pt-6 pb-6">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {user.name}
-              </h1>
-              {user.job && (
-                <p className="text-gray-600 text-sm mt-1">
-                  {user.job}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-3 mb-6">
-              {allLinks.map(([key, value]) => (
-                <LinkItem
-                  key={key}
-                  platform={key}
-                  title={PLATFORM_TITLES[key] || key}
-                  value={String(value)}
-                />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <EditButton />
-            </div>
-          </div>
-          {/* =============== END CONTENT =============== */}
-
-        </div>
-      </main>
-    );
-  } catch {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <div className="bg-white p-6 rounded-2xl shadow text-center">
-          <h2 className="text-lg font-semibold">هذا الـ QR غير موجود</h2>
-          <p className="text-gray-600">
-            تأكد من الكود أو تواصل مع الدعم.
-          </p>
-        </div>
+      <main className="min-h-screen flex items-center justify-center bg-gray-100">
+        <LoginToLinkButton code={params.code} />
       </main>
     );
   }
+
+  const user = data.user;
+  const profile = user.profile || {};
+
+  const allLinks = Object.entries(profile).flatMap(([_, group]) =>
+    Object.entries(group || {}).filter(
+      ([_, v]) => v && String(v).trim() !== ""
+    )
+  );
+
+  return (
+    <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-10">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+
+        {/* ===== HEADER ===== */}
+        <div className="relative h-[300px] overflow-hidden">
+
+          {/* Purple base */}
+          <div className="absolute inset-0 bg-purple-600" />
+
+          {/* Image */}
+          <img
+            src={user.avatar}
+            alt="cover"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Wave */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[120%]">
+            <svg
+              viewBox="0 0 246 57"
+              preserveAspectRatio="none"
+              className="w-full h-[90px]"
+            >
+              {/* white */}
+              <path
+                d="M 214.7168,6.11 C 172,12 110,49 65,57 H 246 V 11 Z"
+                fill="white"
+              />
+              <path
+                d="M 0,36 V 58 H 65 C 40,57 20,49 0,36 Z"
+                fill="white"
+              />
+              {/* purple */}
+              <path
+                d="M 0,17 V 36 C 45,64 83,65 138,33 193,-1 220,4 246,11 V 0 H 0 Z"
+                fill="#8F60DE"
+              />
+            </svg>
+          </div>
+        </div>
+
+        {/* ===== CONTENT ===== */}
+        <div className="px-6 pt-6 pb-8 text-center">
+          <h1 className="text-2xl font-bold">{user.name}</h1>
+          {user.job && <p className="text-gray-500 text-sm">{user.job}</p>}
+
+          <div className="space-y-3 mt-6">
+            {allLinks.map(([key, value]) => (
+              <LinkItem
+                key={key}
+                platform={key}
+                title={PLATFORM_TITLES[key] || key}
+                value={String(value)}
+              />
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <EditButton />
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
