@@ -43,18 +43,18 @@ const PLATFORM_TITLES: Record<string, string> = {
 
 /* ===== Platform icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  whatsapp: <FaWhatsapp />,
-  instagram: <FaInstagram />,
-  facebook: <FaFacebook />,
-  tiktok: <FaTiktok />,
-  website: <FaGlobe />,
-  phone: <FaPhoneAlt />,
-  youtube: <FaYoutube />,
-  paypal: <FaPaypal />,
-  spotify: <FaSpotify />,
-  gaming: <FaGamepad />,
-  email: <FaEnvelope />,
-  other: <FaLink />,
+  whatsapp: <FaWhatsapp className="text-white" />,
+  instagram: <FaInstagram className="text-white" />,
+  facebook: <FaFacebook className="text-white" />,
+  tiktok: <FaTiktok className="text-white" />,
+  website: <FaGlobe className="text-white" />,
+  phone: <FaPhoneAlt className="text-white" />,
+  youtube: <FaYoutube className="text-white" />,
+  paypal: <FaPaypal className="text-white" />,
+  spotify: <FaSpotify className="text-white" />,
+  gaming: <FaGamepad className="text-white" />,
+  email: <FaEnvelope className="text-white" />,
+  other: <FaLink className="text-white" />,
 };
 
 /* ===== Link Row ===== */
@@ -86,7 +86,7 @@ function LinkItem({
       <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-lg flex-shrink-0">
         {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
       </div>
-      <span className="flex-1 text-left">{title}</span>
+      <span className="text-left flex-1">{title}</span>
     </a>
   );
 }
@@ -138,36 +138,32 @@ export default async function Page({ params }: Props) {
       <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
         <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
-          {/* ===== Header with Cover ===== */}
+          {/* ===== Header with Cover and Wave ===== */}
           <div className="relative">
-            {/* Cover Image */}
-            <div className="h-64 w-full overflow-hidden">
-              <img
-                src={user.avatar || "/cover-placeholder.jpg"}
-                alt="Cover"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {/* Cover - Purple solid OR User Image */}
+            {user.avatar ? (
+              <div className="h-72 w-full overflow-hidden">
+                <img
+                  src={user.avatar}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="h-48 w-full bg-gradient-to-br from-purple-500 to-purple-600"></div>
+            )}
 
-            {/* ===== Perfect Wave (HiHello-style) ===== */}
+            {/* White Wave going DOWN */}
             <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
               <svg
-                viewBox="0 0 1440 90"
+                viewBox="0 0 1440 60"
                 preserveAspectRatio="none"
-                className="w-full h-[70px]"
+                className="w-full h-[50px]"
+                style={{ display: 'block' }}
               >
                 <path
-                  fill="#8b5cf6"
-                  d="
-                    M0,50
-                    C120,65 240,75 360,70
-                    C480,65 600,45 720,40
-                    C840,35 960,45 1080,55
-                    C1200,65 1320,70 1440,60
-                    L1440,0
-                    L0,0
-                    Z
-                  "
+                  fill="#ffffff"
+                  d="M0,30 C240,45 480,15 720,30 C960,45 1200,15 1440,30 L1440,60 L0,60 Z"
                 />
               </svg>
             </div>
@@ -175,13 +171,15 @@ export default async function Page({ params }: Props) {
 
           {/* ===== Content ===== */}
           <div className="px-6 pt-6 pb-6">
-            {/* Name & Job */}
+            {/* Name and Job */}
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
                 {user.name}
               </h1>
               {user.job && (
-                <p className="text-gray-600 text-sm">{user.job}</p>
+                <p className="text-gray-600 text-sm font-normal">
+                  {user.job}
+                </p>
               )}
             </div>
 
@@ -197,8 +195,8 @@ export default async function Page({ params }: Props) {
               ))}
             </div>
 
-            {/* Edit */}
-            <div className="text-center">
+            {/* Edit Button */}
+            <div className="text-center mt-4">
               <EditButton />
             </div>
           </div>
