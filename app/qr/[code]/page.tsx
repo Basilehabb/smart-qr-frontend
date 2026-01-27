@@ -2,6 +2,20 @@ import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
 
+import {
+  FaWhatsapp,
+  FaInstagram,
+  FaFacebook,
+  FaTiktok,
+  FaGlobe,
+  FaPhoneAlt,
+  FaYoutube,
+  FaPaypal,
+  FaSpotify,
+  FaGamepad,
+  FaLink,
+} from "react-icons/fa";
+
 type Props = { params: { code: string } };
 
 async function fetchQr(code: string) {
@@ -12,7 +26,7 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
-// نفس الترتيب
+/* ===== Sections order ===== */
 const SECTIONS = [
   { key: "contact", title: "Contact" },
   { key: "social", title: "Social" },
@@ -24,7 +38,7 @@ const SECTIONS = [
   { key: "other", title: "Other" },
 ];
 
-// 🔥 platform titles هنا
+/* ===== Platform titles ===== */
 const PLATFORM_TITLES: Record<string, string> = {
   whatsapp: "WhatsApp",
   instagram: "Instagram",
@@ -32,20 +46,58 @@ const PLATFORM_TITLES: Record<string, string> = {
   tiktok: "TikTok",
   website: "Website",
   phone: "Phone",
+  youtube: "YouTube",
+  paypal: "PayPal",
+  spotify: "Spotify",
 };
 
-function LinkItem({ title, value }: { title: string; value: string }) {
+/* ===== Platform icons ===== */
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  whatsapp: <FaWhatsapp className="text-green-500" />,
+  instagram: <FaInstagram className="text-pink-500" />,
+  facebook: <FaFacebook className="text-blue-600" />,
+  tiktok: <FaTiktok className="text-black" />,
+  website: <FaGlobe className="text-gray-600" />,
+  phone: <FaPhoneAlt className="text-gray-600" />,
+  youtube: <FaYoutube className="text-red-600" />,
+  paypal: <FaPaypal className="text-blue-500" />,
+  spotify: <FaSpotify className="text-green-600" />,
+  gaming: <FaGamepad className="text-purple-600" />,
+  other: <FaLink className="text-gray-500" />,
+};
+
+/* ===== Link Item ===== */
+function LinkItem({
+  title,
+  value,
+  platform,
+}: {
+  title: string;
+  value: string;
+  platform: string;
+}) {
   return (
     <a
       href={value}
       target="_blank"
-      className="flex items-center justify-between w-full p-3 bg-white border rounded-lg hover:bg-gray-50"
+      rel="noopener noreferrer"
+      className="
+        flex items-center justify-between
+        w-full px-5 py-4
+        rounded-2xl
+        bg-gray-50 border
+        hover:bg-gray-100
+        transition
+      "
     >
-      <div>
-        <div className="font-semibold text-gray-700">{title}</div>
-        <div className="text-xs text-gray-500 break-all">{value}</div>
+      <div className="flex items-center gap-4">
+        <div className="text-xl">
+          {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
+        </div>
+        <span className="font-medium text-gray-800">{title}</span>
       </div>
-      <span className="text-indigo-500 text-sm">Open</span>
+
+      <span className="text-gray-400 text-lg">›</span>
     </a>
   );
 }
@@ -56,21 +108,22 @@ export default async function Page({ params }: Props) {
   try {
     const data = await fetchQr(code);
 
-    // QR NOT LINKED
+    /* ===== QR not linked ===== */
     if (!data.user) {
       return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="p-8 bg-white rounded shadow max-w-md w-full text-center">
-            <h2 className="text-xl font-semibold mb-2">هذا الـ QR غير مربوط</h2>
-
-            <p className="text-gray-600 mb-4">
+        <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+          <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+            <h2 className="text-xl font-semibold mb-2">
+              هذا الـ QR غير مربوط
+            </h2>
+            <p className="text-gray-600 mb-6">
               يمكنك تسجيل حساب جديد أو تسجيل دخول لربط هذا QR.
             </p>
 
-            <div className="flex justify-center gap-4 mt-4">
+            <div className="flex justify-center gap-4">
               <a
                 href={`/register?code=${code}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
               >
                 Register & Link
               </a>
@@ -85,56 +138,64 @@ export default async function Page({ params }: Props) {
     const user = data.user;
     const profile = user.profile || {};
 
+    /* ===== Profile Page ===== */
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <div className="bg-white p-6 rounded-xl shadow-lg max-w-lg w-full">
+      <main className="min-h-screen bg-gray-100 flex justify-center px-4 py-10">
+        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[420px]">
 
-          {/* ===== Avatar + Name ===== */}
-          <div className="text-center mb-6">
+          {/* Avatar + Name */}
+          <div className="text-center pt-10 pb-6">
             {user.avatar ? (
               <img
                 src={user.avatar}
-                className="w-24 h-24 rounded-full mx-auto object-cover mb-3 shadow"
                 alt="Avatar"
+                className="
+                  w-28 h-28 rounded-full mx-auto object-cover
+                  shadow-md -mt-20 mb-4
+                  border-4 border-white
+                "
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gray-300 mx-auto flex items-center justify-center text-3xl font-bold text-white mb-3">
+              <div
+                className="
+                  w-28 h-28 rounded-full bg-gray-300 mx-auto
+                  flex items-center justify-center
+                  text-4xl font-bold text-white
+                  shadow-md -mt-20 mb-4
+                  border-4 border-white
+                "
+              >
                 {user.name?.[0]?.toUpperCase() || "U"}
               </div>
             )}
 
-            <h1 className="text-2xl font-bold">{user.name}</h1>
+            <h1 className="text-2xl font-semibold">{user.name}</h1>
 
             {user.job && (
-              <p className="text-gray-500 text-sm">{user.job}</p>
-            )}
-
-            {(user.countryCode || user.phone) && (
-              <p className="text-gray-600 mt-1">
-                {user.countryCode} {user.phone}
-              </p>
+              <p className="text-gray-500 text-sm mt-1">{user.job}</p>
             )}
           </div>
 
-          {/* ===== SECTIONS ===== */}
-          <div className="space-y-6">
+          {/* Links */}
+          <div className="px-6 pb-8 space-y-8">
             {SECTIONS.map((sec) => {
-              const entries = Object.entries(profile[sec.key] || {})
-              .filter(([_, v]) => v !== null && String(v).trim() !== "")
-              .sort((a, b) => 0); // preserve original saved order exactly
+              const entries = Object.entries(profile[sec.key] || {}).filter(
+                ([_, v]) => v !== null && String(v).trim() !== ""
+              );
 
-              if (entries.length === 0) return null;
+              if (!entries.length) return null;
 
               return (
                 <div key={sec.key}>
-                  <h3 className="text-sm font-bold text-gray-600 mb-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
                     {sec.title}
                   </h3>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {entries.map(([key, value]) => (
                       <LinkItem
                         key={key}
+                        platform={key}
                         title={PLATFORM_TITLES[key] || key}
                         value={String(value)}
                       />
@@ -143,21 +204,23 @@ export default async function Page({ params }: Props) {
                 </div>
               );
             })}
-          </div>
 
-          {/* Edit Button */}
-          <div className="text-center mt-6">
-            <EditButton />
+            {/* Edit Button */}
+            <div className="text-center pt-6">
+              <EditButton />
+            </div>
           </div>
         </div>
       </main>
     );
-  } catch (err) {
+  } catch {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="p-6 bg-white rounded shadow text-center">
+      <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <div className="bg-white p-6 rounded-2xl shadow text-center">
           <h2 className="text-lg font-semibold">هذا الـ QR غير موجود</h2>
-          <p className="text-gray-600">تأكد من الكود أو تواصل مع الدعم.</p>
+          <p className="text-gray-600">
+            تأكد من الكود أو تواصل مع الدعم.
+          </p>
         </div>
       </main>
     );
