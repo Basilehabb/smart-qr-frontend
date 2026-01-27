@@ -71,10 +71,11 @@ function LinkItem({
       rel="noopener noreferrer"
       className="
         flex items-center gap-4
-        w-full px-4 py-3
+        w-full px-4 py-4
         rounded-xl
-        bg-white border border-gray-200
-        hover:bg-gray-50
+        bg-white
+        shadow-sm
+        hover:shadow-md
         transition
       "
     >
@@ -123,7 +124,7 @@ export default async function Page({ params }: Props) {
     const user = data.user;
     const profile = user.profile || {};
 
-    /* ===== Collect all links (no sections) ===== */
+    /* ===== collect all links ===== */
     const allLinks = Object.entries(profile).flatMap(([_, group]) =>
       Object.entries(group || {}).filter(
         ([_, v]) => v && String(v).trim() !== ""
@@ -134,56 +135,48 @@ export default async function Page({ params }: Props) {
       <main className="min-h-screen bg-gray-100 flex justify-center px-4 py-6">
         <div className="bg-white rounded-3xl shadow-xl w-full max-w-[420px] overflow-hidden">
 
-          {/* ===== Header ===== */}
-          <div className="relative h-40 bg-gradient-to-r from-indigo-500 to-purple-500">
+          {/* ===== Header with Cover ===== */}
+          <div className="relative h-64 w-full overflow-hidden">
+            <img
+              src={user.avatar || "/cover-placeholder.jpg"}
+              alt="Cover"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            <div className="absolute inset-0 bg-black/25" />
+
+            {/* Wave */}
             <svg
               className="absolute bottom-0 w-full"
-              viewBox="0 0 1440 100"
-              fill="none"
+              viewBox="0 0 1440 120"
+              preserveAspectRatio="none"
             >
               <path
-                fill="#fff"
-                d="M0,40 C240,80 480,0 720,20 960,40 1200,80 1440,40 L1440,100 L0,100 Z"
+                fill="#ffffff"
+                d="M0,60 C240,120 480,0 720,30 960,60 1200,120 1440,60 L1440,120 L0,120 Z"
               />
             </svg>
-          </div>
 
-          {/* ===== Avatar ===== */}
-          <div className="relative flex justify-center -mt-14">
-            {user.avatar ? (
+            {/* Header content */}
+            <div className="relative z-10 flex flex-col items-center justify-end h-full pb-10 text-white">
               <img
                 src={user.avatar}
                 alt="Avatar"
-                className="
-                  w-28 h-28 rounded-full
-                  border-4 border-white
-                  shadow-lg object-cover
-                "
+                className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover mb-3"
               />
-            ) : (
-              <div
-                className="
-                  w-28 h-28 rounded-full bg-gray-300
-                  flex items-center justify-center
-                  text-4xl font-bold text-white
-                  border-4 border-white shadow-lg
-                "
-              >
-                {user.name?.[0]?.toUpperCase() || "U"}
-              </div>
-            )}
-          </div>
 
-          {/* ===== Name ===== */}
-          <div className="text-center mt-4 mb-6 px-6">
-            <h1 className="text-2xl font-semibold">{user.name}</h1>
-            {user.job && (
-              <p className="text-gray-500 text-sm mt-1">{user.job}</p>
-            )}
+              <h1 className="text-2xl font-semibold">{user.name}</h1>
+
+              {user.job && (
+                <p className="text-sm text-white/90 mt-1">
+                  {user.job}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* ===== Links ===== */}
-          <div className="px-6 space-y-3">
+          <div className="px-6 py-6 space-y-3">
             {allLinks.map(([key, value]) => (
               <LinkItem
                 key={key}
@@ -194,24 +187,8 @@ export default async function Page({ params }: Props) {
             ))}
           </div>
 
-          {/* ===== Save Contact ===== */}
-          <div className="px-6 mt-6">
-            <a
-              href={`/api/vcard/${user.id}`}
-              className="
-                block w-full text-center
-                bg-indigo-600 text-white
-                py-3 rounded-xl
-                font-semibold
-                hover:bg-indigo-700 transition
-              "
-            >
-              Save Contact
-            </a>
-          </div>
-
           {/* ===== Edit ===== */}
-          <div className="text-center mt-4 mb-6">
+          <div className="text-center mb-6">
             <EditButton />
           </div>
         </div>
