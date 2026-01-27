@@ -137,11 +137,11 @@ export default async function Page({ params }: Props) {
       <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
         <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
-          {/* ===== Header ===== */}
+          {/* ================= HEADER ================= */}
           <div className="relative">
 
-            {/* Cover Image */}
-            <div className="h-72 w-full overflow-hidden">
+            {/* Cover image (أطول من مكان القطع) */}
+            <div className="relative h-[340px] w-full overflow-hidden z-10">
               <img
                 src={user.avatar || "/cover-placeholder.jpg"}
                 alt="Cover"
@@ -149,36 +149,17 @@ export default async function Page({ params }: Props) {
               />
             </div>
 
-            {/* Purple overlay (keeps purple visible) */}
-            <div className="absolute inset-0 bg-purple-600/25" />
+            {/* Purple overlay خفيف */}
+            <div className="absolute inset-0 bg-purple-600/20 z-20" />
 
-            {/* ===== HiHello Exact Wave ===== */}
-            <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
+            {/* ===== Purple wave (جزء من الصورة) ===== */}
+            <div className="absolute bottom-[12px] left-0 w-full overflow-hidden leading-none z-30">
               <svg
                 viewBox="0 0 246 57"
                 preserveAspectRatio="xMinYMax meet"
-                className="w-full h-[80px]"
+                className="w-full h-[90px]"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {/* White right */}
-                <path
-                  d="M 214.7168,6.1113281
-                     C 195.65271,5.9023124 172.37742,11.948182 137.87305,32.529297
-                     110.16613,49.05604 86.980345,56.862784 65.015625,57
-                     H 65 v 1 H 246 V 11.453125
-                     C 236.0775,8.6129313 226.15525,6.2367376 214.7168,6.1113281 Z"
-                  fill="white"
-                />
-
-                {/* White left */}
-                <path
-                  d="M 0,35.773438 V 58 H 65
-                     L 64.97852,57
-                     C 43.192081,57.127508 22.605139,49.707997 0,35.773438 Z"
-                  fill="white"
-                />
-
-                {/* Purple wave */}
                 <path
                   d="m 0,16.7221 v 19.052
                      C 45.4067,63.7643 82.6667,65.4583 137.873,32.5286
@@ -190,9 +171,36 @@ export default async function Page({ params }: Props) {
                 />
               </svg>
             </div>
-          </div>
 
-          {/* ===== Content ===== */}
+            {/* ===== White wave (القطع النهائي) ===== */}
+            <div className="absolute bottom-[-6px] left-0 w-full overflow-hidden leading-none z-40">
+              <svg
+                viewBox="0 0 246 57"
+                preserveAspectRatio="xMinYMax meet"
+                className="w-full h-[70px]"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M 214.7168,6.1113281
+                     C 195.65271,5.9023124 172.37742,11.948182 137.87305,32.529297
+                     110.16613,49.05604 86.980345,56.862784 65.015625,57
+                     H 65 v 1 H 246 V 11.453125
+                     C 236.0775,8.6129313 226.15525,6.2367376 214.7168,6.1113281 Z"
+                  fill="white"
+                />
+                <path
+                  d="M 0,35.773438 V 58 H 65
+                     L 64.97852,57
+                     C 43.192081,57.127508 22.605139,49.707997 0,35.773438 Z"
+                  fill="white"
+                />
+              </svg>
+            </div>
+
+          </div>
+          {/* =============== END HEADER =============== */}
+
+          {/* ================= CONTENT ================= */}
           <div className="px-6 pt-6 pb-6">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -220,6 +228,8 @@ export default async function Page({ params }: Props) {
               <EditButton />
             </div>
           </div>
+          {/* =============== END CONTENT =============== */}
+
         </div>
       </main>
     );
