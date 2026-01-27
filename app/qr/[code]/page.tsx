@@ -26,18 +26,6 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
-/* ===== Sections order ===== */
-const SECTIONS = [
-  { key: "contact", title: "Contact" },
-  { key: "social", title: "Social" },
-  { key: "payment", title: "Payment" },
-  { key: "video", title: "Video" },
-  { key: "music", title: "Music" },
-  { key: "design", title: "Design" },
-  { key: "gaming", title: "Gaming" },
-  { key: "other", title: "Other" },
-];
-
 /* ===== Platform titles ===== */
 const PLATFORM_TITLES: Record<string, string> = {
   whatsapp: "WhatsApp",
@@ -53,7 +41,7 @@ const PLATFORM_TITLES: Record<string, string> = {
 
 /* ===== Platform icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  whatsapp: <FaWhatsapp className="text-green-500" />,
+  whatsapp: <FaWhatsapp className="text-green-600" />,
   instagram: <FaInstagram className="text-pink-500" />,
   facebook: <FaFacebook className="text-blue-600" />,
   tiktok: <FaTiktok className="text-black" />,
@@ -66,7 +54,7 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   other: <FaLink className="text-gray-500" />,
 };
 
-/* ===== Link Item ===== */
+/* ===== Link Row ===== */
 function LinkItem({
   title,
   value,
@@ -82,22 +70,19 @@ function LinkItem({
       target="_blank"
       rel="noopener noreferrer"
       className="
-        flex items-center justify-between
-        w-full px-5 py-4
-        rounded-2xl
-        bg-gray-50 border
-        hover:bg-gray-100
+        flex items-center gap-4
+        w-full px-4 py-3
+        rounded-xl
+        bg-white border border-gray-200
+        hover:bg-gray-50
         transition
       "
     >
-      <div className="flex items-center gap-4">
-        <div className="text-xl">
-          {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
-        </div>
-        <span className="font-medium text-gray-800">{title}</span>
+      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+        {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
       </div>
 
-      <span className="text-gray-400 text-lg">›</span>
+      <span className="font-medium text-gray-800">{title}</span>
     </a>
   );
 }
@@ -123,7 +108,7 @@ export default async function Page({ params }: Props) {
             <div className="flex justify-center gap-4">
               <a
                 href={`/register?code=${code}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
               >
                 Register & Link
               </a>
@@ -138,77 +123,96 @@ export default async function Page({ params }: Props) {
     const user = data.user;
     const profile = user.profile || {};
 
-    /* ===== Profile Page ===== */
-    return (
-      <main className="min-h-screen bg-gray-100 flex justify-center px-4 py-10">
-        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[420px]">
+    /* ===== Collect all links (no sections) ===== */
+    const allLinks = Object.entries(profile).flatMap(([_, group]) =>
+      Object.entries(group || {}).filter(
+        ([_, v]) => v && String(v).trim() !== ""
+      )
+    );
 
-          {/* Avatar + Name */}
-          <div className="text-center pt-10 pb-6">
+    return (
+      <main className="min-h-screen bg-gray-100 flex justify-center px-4 py-6">
+        <div className="bg-white rounded-3xl shadow-xl w-full max-w-[420px] overflow-hidden">
+
+          {/* ===== Header ===== */}
+          <div className="relative h-40 bg-gradient-to-r from-indigo-500 to-purple-500">
+            <svg
+              className="absolute bottom-0 w-full"
+              viewBox="0 0 1440 100"
+              fill="none"
+            >
+              <path
+                fill="#fff"
+                d="M0,40 C240,80 480,0 720,20 960,40 1200,80 1440,40 L1440,100 L0,100 Z"
+              />
+            </svg>
+          </div>
+
+          {/* ===== Avatar ===== */}
+          <div className="relative flex justify-center -mt-14">
             {user.avatar ? (
               <img
                 src={user.avatar}
                 alt="Avatar"
                 className="
-                  w-28 h-28 rounded-full mx-auto object-cover
-                  shadow-md -mt-20 mb-4
+                  w-28 h-28 rounded-full
                   border-4 border-white
+                  shadow-lg object-cover
                 "
               />
             ) : (
               <div
                 className="
-                  w-28 h-28 rounded-full bg-gray-300 mx-auto
+                  w-28 h-28 rounded-full bg-gray-300
                   flex items-center justify-center
                   text-4xl font-bold text-white
-                  shadow-md -mt-20 mb-4
-                  border-4 border-white
+                  border-4 border-white shadow-lg
                 "
               >
                 {user.name?.[0]?.toUpperCase() || "U"}
               </div>
             )}
+          </div>
 
+          {/* ===== Name ===== */}
+          <div className="text-center mt-4 mb-6 px-6">
             <h1 className="text-2xl font-semibold">{user.name}</h1>
-
             {user.job && (
               <p className="text-gray-500 text-sm mt-1">{user.job}</p>
             )}
           </div>
 
-          {/* Links */}
-          <div className="px-6 pb-8 space-y-8">
-            {SECTIONS.map((sec) => {
-              const entries = Object.entries(profile[sec.key] || {}).filter(
-                ([_, v]) => v !== null && String(v).trim() !== ""
-              );
+          {/* ===== Links ===== */}
+          <div className="px-6 space-y-3">
+            {allLinks.map(([key, value]) => (
+              <LinkItem
+                key={key}
+                platform={key}
+                title={PLATFORM_TITLES[key] || key}
+                value={String(value)}
+              />
+            ))}
+          </div>
 
-              if (!entries.length) return null;
+          {/* ===== Save Contact ===== */}
+          <div className="px-6 mt-6">
+            <a
+              href={`/api/vcard/${user.id}`}
+              className="
+                block w-full text-center
+                bg-indigo-600 text-white
+                py-3 rounded-xl
+                font-semibold
+                hover:bg-indigo-700 transition
+              "
+            >
+              Save Contact
+            </a>
+          </div>
 
-              return (
-                <div key={sec.key}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-                    {sec.title}
-                  </h3>
-
-                  <div className="space-y-3">
-                    {entries.map(([key, value]) => (
-                      <LinkItem
-                        key={key}
-                        platform={key}
-                        title={PLATFORM_TITLES[key] || key}
-                        value={String(value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Edit Button */}
-            <div className="text-center pt-6">
-              <EditButton />
-            </div>
+          {/* ===== Edit ===== */}
+          <div className="text-center mt-4 mb-6">
+            <EditButton />
           </div>
         </div>
       </main>
