@@ -26,26 +26,28 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
+/* ===== Titles ===== */
 const PLATFORM_TITLES: Record<string, string> = {
-  whatsapp: "WhatsApp",
   instagram: "Instagram",
+  phone: "Phone",
+  whatsapp: "WhatsApp",
   facebook: "Facebook",
   tiktok: "TikTok",
   website: "Website",
-  phone: "Phone",
   youtube: "YouTube",
   paypal: "PayPal",
   spotify: "Spotify",
   email: "Email",
 };
 
+/* ===== Icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  whatsapp: <FaWhatsapp />,
   instagram: <FaInstagram />,
+  phone: <FaPhoneAlt />,
+  whatsapp: <FaWhatsapp />,
   facebook: <FaFacebook />,
   tiktok: <FaTiktok />,
   website: <FaGlobe />,
-  phone: <FaPhoneAlt />,
   youtube: <FaYoutube />,
   paypal: <FaPaypal />,
   spotify: <FaSpotify />,
@@ -68,11 +70,16 @@ function LinkItem({
       href={value}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 w-full px-6 py-3 rounded-full
-      bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium
-      shadow-md hover:shadow-lg transition"
+      className="
+        flex items-center gap-4
+        w-full px-6 py-4
+        rounded-full
+        bg-gradient-to-r from-purple-600 to-purple-700
+        text-white font-medium
+        shadow-md
+      "
     >
-      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg">
         {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
       </div>
       <span className="flex-1 text-left">{title}</span>
@@ -81,12 +88,13 @@ function LinkItem({
 }
 
 export default async function Page({ params }: Props) {
-  const data = await fetchQr(params.code);
+  const code = params.code;
+  const data = await fetchQr(code);
 
   if (!data.user) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-100">
-        <LoginToLinkButton code={params.code} />
+        <LoginToLinkButton code={code} />
       </main>
     );
   }
@@ -101,53 +109,56 @@ export default async function Page({ params }: Props) {
   );
 
   return (
-    <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-10">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
-        {/* ===== HEADER ===== */}
+        {/* ================= HEADER ================= */}
         <div className="relative h-[300px] overflow-hidden">
 
-          {/* Purple base */}
-          <div className="absolute inset-0 bg-purple-600" />
+          {/* Purple background */}
+          <div className="absolute inset-0 bg-[#8F60DE]" />
 
-          {/* Image */}
-          <img
-            src={user.avatar}
-            alt="cover"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          {/* Cover image */}
+          {user.avatar && (
+            <img
+              src={user.avatar}
+              alt="cover"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
 
-          {/* Wave */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[120%]">
-            <svg
-              viewBox="0 0 246 57"
-              preserveAspectRatio="none"
-              className="w-full h-[90px]"
-            >
-              {/* white */}
-              <path
-                d="M 214.7168,6.11 C 172,12 110,49 65,57 H 246 V 11 Z"
-                fill="white"
-              />
-              <path
-                d="M 0,36 V 58 H 65 C 40,57 20,49 0,36 Z"
-                fill="white"
-              />
-              {/* purple */}
-              <path
-                d="M 0,17 V 36 C 45,64 83,65 138,33 193,-1 220,4 246,11 V 0 H 0 Z"
-                fill="#8F60DE"
-              />
-            </svg>
-          </div>
+          {/* White wave CUT */}
+          <svg
+            viewBox="0 0 1440 120"
+            preserveAspectRatio="none"
+            className="absolute bottom-0 left-0 w-full h-[120px]"
+          >
+            <path
+              fill="#ffffff"
+              d="
+                M0,50
+                C240,110 480,0 720,40
+                960,80 1200,30 1440,60
+                L1440,120
+                L0,120
+                Z
+              "
+            />
+          </svg>
         </div>
 
-        {/* ===== CONTENT ===== */}
-        <div className="px-6 pt-6 pb-8 text-center">
-          <h1 className="text-2xl font-bold">{user.name}</h1>
-          {user.job && <p className="text-gray-500 text-sm">{user.job}</p>}
+        {/* ================= CONTENT ================= */}
+        <div className="px-6 pt-6 pb-8">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {user.name}
+            </h1>
+            {user.job && (
+              <p className="text-gray-500 text-sm">{user.job}</p>
+            )}
+          </div>
 
-          <div className="space-y-3 mt-6">
+          <div className="space-y-4 mb-6">
             {allLinks.map(([key, value]) => (
               <LinkItem
                 key={key}
@@ -158,7 +169,7 @@ export default async function Page({ params }: Props) {
             ))}
           </div>
 
-          <div className="mt-6">
+          <div className="text-center">
             <EditButton />
           </div>
         </div>
