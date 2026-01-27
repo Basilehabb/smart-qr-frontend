@@ -140,8 +140,8 @@ export default async function Page({ params }: Props) {
 
           {/* ===== Header with Cover and Wave ===== */}
           <div className="relative">
-            {/* Cover Image */}
-            <div className="h-52 w-full overflow-hidden">
+            {/* Cover Image - Full height */}
+            <div className="h-64 w-full overflow-hidden">
               <img
                 src={user.avatar || "/cover-placeholder.jpg"}
                 alt="Cover"
@@ -149,33 +149,24 @@ export default async function Page({ params }: Props) {
               />
             </div>
 
-            {/* Purple Wave - exact HiHello style */}
-            <div className="absolute bottom-0 w-full" style={{ transform: 'translateY(1px)' }}>
+            {/* Purple Wave - thin and smooth like HiHello */}
+            <div className="absolute bottom-0 w-full">
               <svg
                 className="w-full"
-                viewBox="0 0 1440 60"
+                viewBox="0 0 1440 40"
                 preserveAspectRatio="none"
-                style={{ height: '50px', display: 'block' }}
+                style={{ height: '35px', display: 'block' }}
               >
                 <path
                   fill="#8b5cf6"
-                  d="M0,30 C360,50 480,10 720,30 C960,50 1080,10 1440,30 L1440,60 L0,60 Z"
+                  d="M0,20 C240,35 480,5 720,20 C960,35 1200,5 1440,20 L1440,40 L0,40 Z"
                 />
               </svg>
-            </div>
-
-            {/* Avatar Circle - positioned on the wave */}
-            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '-40px' }}>
-              <img
-                src={user.avatar}
-                alt="Avatar"
-                className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-              />
             </div>
           </div>
 
           {/* ===== Content ===== */}
-          <div className="pt-14 px-6 pb-6">
+          <div className="px-6 pt-6 pb-6">
             {/* Name and Job */}
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
