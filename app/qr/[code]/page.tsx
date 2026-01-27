@@ -1,6 +1,7 @@
 import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
+
 import {
   FaWhatsapp,
   FaInstagram,
@@ -56,6 +57,7 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   other: <FaLink />,
 };
 
+/* ===== Link Item ===== */
 function LinkItem({
   title,
   value,
@@ -112,25 +114,29 @@ export default async function Page({ params }: Props) {
     <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
-        {/* ================= HEADER (HiHello Style) ================= */}
+        {/* ================= HEADER ================= */}
         <div className="relative overflow-hidden">
 
-          {/* Cover Image */}
-          <div className="relative h-[300px] w-full">
-            {user.avatar && (
-              <img
-                src={user.avatar}
-                alt="cover"
-                className="absolute inset-0 w-full h-full object-cover z-10"
-              />
-            )}
-          </div>
+          {/* Purple background */}
+          <div className="absolute inset-0 bg-[#8F60DE]" />
 
-          {/* Wave */}
+          {/* Cover image */}
+          {user.avatar && (
+            <img
+              src={user.avatar}
+              alt="cover"
+              className="absolute inset-0 w-full h-full object-cover z-10"
+            />
+          )}
+
+          {/* Height holder */}
+          <div className="h-[300px]" />
+
+          {/* HiHello EXACT wave */}
           <div className="absolute bottom-[-1px] left-0 w-full z-20">
             <svg
               viewBox="0 0 246 57"
-              preserveAspectRatio="xMinYMax meet"
+              preserveAspectRatio="none"
               className="w-full h-[90px]"
               xmlns="http://www.w3.org/2000/svg"
             >
