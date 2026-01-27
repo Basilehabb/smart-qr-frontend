@@ -137,7 +137,7 @@ export default async function Page({ params }: Props) {
         <div className="bg-white rounded-2xl shadow-lg w-full max-w-md md:max-w-lg overflow-hidden">
 
           {/* ================= HEADER ================= */}
-          <div className="relative h-[280px] md:h-[340px]">
+          <div className="relative h-[300px] md:h-[360px] overflow-hidden">
 
             {/* Cover Image */}
             <img
@@ -149,8 +149,8 @@ export default async function Page({ params }: Props) {
             {/* Purple overlay */}
             <div className="absolute inset-0 bg-purple-600/25" />
 
-            {/* Purple Wave (جزء من الصورة) */}
-            <div className="absolute bottom-[30px] left-0 w-full z-20">
+            {/* Purple wave (لاصقة في الصورة) */}
+            <div className="absolute bottom-0 left-0 w-full z-20 translate-y-[6px]">
               <svg
                 viewBox="0 0 246 57"
                 preserveAspectRatio="none"
@@ -169,7 +169,7 @@ export default async function Page({ params }: Props) {
               </svg>
             </div>
 
-            {/* White Cut Wave */}
+            {/* White cut wave */}
             <div className="absolute bottom-0 left-0 w-full z-30">
               <svg
                 viewBox="0 0 246 57"
@@ -193,6 +193,7 @@ export default async function Page({ params }: Props) {
                 />
               </svg>
             </div>
+
           </div>
           {/* =============== END HEADER =============== */}
 
