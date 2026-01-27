@@ -43,18 +43,18 @@ const PLATFORM_TITLES: Record<string, string> = {
 
 /* ===== Platform icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  whatsapp: <FaWhatsapp />,
-  instagram: <FaInstagram />,
-  facebook: <FaFacebook />,
-  tiktok: <FaTiktok />,
-  website: <FaGlobe />,
-  phone: <FaPhoneAlt />,
-  youtube: <FaYoutube />,
-  paypal: <FaPaypal />,
-  spotify: <FaSpotify />,
-  gaming: <FaGamepad />,
-  email: <FaEnvelope />,
-  other: <FaLink />,
+  whatsapp: <FaWhatsapp className="text-white" />,
+  instagram: <FaInstagram className="text-white" />,
+  facebook: <FaFacebook className="text-white" />,
+  tiktok: <FaTiktok className="text-white" />,
+  website: <FaGlobe className="text-white" />,
+  phone: <FaPhoneAlt className="text-white" />,
+  youtube: <FaYoutube className="text-white" />,
+  paypal: <FaPaypal className="text-white" />,
+  spotify: <FaSpotify className="text-white" />,
+  gaming: <FaGamepad className="text-white" />,
+  email: <FaEnvelope className="text-white" />,
+  other: <FaLink className="text-white" />,
 };
 
 /* ===== Link Row ===== */
@@ -137,9 +137,8 @@ export default async function Page({ params }: Props) {
       <main className="min-h-screen bg-gray-50 flex justify-center px-4 py-8">
         <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
-          {/* ===== Header ===== */}
+          {/* ===== Header with Cover and Wave ===== */}
           <div className="relative">
-
             {/* Cover Image */}
             <div className="h-72 w-full overflow-hidden">
               <img
@@ -149,51 +148,23 @@ export default async function Page({ params }: Props) {
               />
             </div>
 
-            {/* Purple overlay (keeps purple visible) */}
-            <div className="absolute inset-0 bg-purple-600/25" />
-
-            {/* ===== HiHello Exact Wave ===== */}
-            <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
-              <svg
-                viewBox="0 0 246 57"
-                preserveAspectRatio="xMinYMax meet"
-                className="w-full h-[80px]"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* White right */}
-                <path
-                  d="M 214.7168,6.1113281
-                     C 195.65271,5.9023124 172.37742,11.948182 137.87305,32.529297
-                     110.16613,49.05604 86.980345,56.862784 65.015625,57
-                     H 65 v 1 H 246 V 11.453125
-                     C 236.0775,8.6129313 226.15525,6.2367376 214.7168,6.1113281 Z"
-                  fill="white"
-                />
-
-                {/* White left */}
-                <path
-                  d="M 0,35.773438 V 58 H 65
-                     L 64.97852,57
-                     C 43.192081,57.127508 22.605139,49.707997 0,35.773438 Z"
-                  fill="white"
-                />
-
-                {/* Purple wave */}
-                <path
-                  d="m 0,16.7221 v 19.052
-                     C 45.4067,63.7643 82.6667,65.4583 137.873,32.5286
-                     193.08,-0.401184 219.54,3.87965 246,11.4535
-                     V 6.51403
-                     C 185.24,-16.8661 135.913,29.331 97.6933,40.8564
-                     59.4733,52.3818 33.6467,44.1494 0,16.7221 Z"
-                  fill="#8F60DE"
-                />
-              </svg>
-            </div>
+            {/* White Wave - Simple and Clean */}
+            <svg
+              className="absolute bottom-0 left-0 w-full"
+              viewBox="0 0 1200 120"
+              preserveAspectRatio="none"
+              style={{ height: '60px' }}
+            >
+              <path
+                d="M0,50 C150,80 350,0 600,50 C850,100 1050,20 1200,50 L1200,120 L0,120 Z"
+                fill="white"
+              />
+            </svg>
           </div>
 
           {/* ===== Content ===== */}
           <div className="px-6 pt-6 pb-6">
+            {/* Name and Job */}
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
                 {user.name}
@@ -205,6 +176,7 @@ export default async function Page({ params }: Props) {
               )}
             </div>
 
+            {/* Links */}
             <div className="space-y-3 mb-6">
               {allLinks.map(([key, value]) => (
                 <LinkItem
@@ -216,6 +188,7 @@ export default async function Page({ params }: Props) {
               ))}
             </div>
 
+            {/* Edit Button */}
             <div className="text-center">
               <EditButton />
             </div>
