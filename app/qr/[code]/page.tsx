@@ -149,12 +149,12 @@ export default async function Page({ params }: Props) {
             {/* Purple overlay */}
             <div className="absolute inset-0 bg-purple-600/25" />
 
-            {/* Purple wave (لاصقة في الصورة) */}
+            {/* Purple wave (أعرض من الكارت عشان ما يتقصش) */}
             <div className="absolute bottom-0 left-0 w-full z-20 translate-y-[6px]">
               <svg
                 viewBox="0 0 246 57"
                 preserveAspectRatio="none"
-                className="w-full h-[70px] md:h-[90px]"
+                className="w-[120%] -ml-[10%] h-[70px] md:h-[90px]"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
