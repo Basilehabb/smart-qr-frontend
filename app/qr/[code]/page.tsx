@@ -140,39 +140,42 @@ export default async function Page({ params }: Props) {
 
           {/* ===== Header with Cover and Wave ===== */}
           <div className="relative">
-            {/* Cover Image - without avatar */}
-            <div className="h-48 w-full overflow-hidden bg-gradient-to-br from-orange-200 via-yellow-200 to-orange-300">
+            {/* Cover Image */}
+            <div className="h-52 w-full overflow-hidden">
+              <img
+                src={user.avatar || "/cover-placeholder.jpg"}
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
             </div>
 
-            {/* Purple Wave - matching HiHello style */}
-            <div className="absolute bottom-0 w-full">
+            {/* Purple Wave - exact HiHello style */}
+            <div className="absolute bottom-0 w-full" style={{ transform: 'translateY(1px)' }}>
               <svg
                 className="w-full"
-                viewBox="0 0 1440 120"
+                viewBox="0 0 1440 60"
                 preserveAspectRatio="none"
-                style={{ height: '100px' }}
+                style={{ height: '50px', display: 'block' }}
               >
                 <path
-                  fill="#7c3aed"
-                  d="M0,60 C240,100 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z"
+                  fill="#8b5cf6"
+                  d="M0,30 C360,50 480,10 720,30 C960,50 1080,10 1440,30 L1440,60 L0,60 Z"
                 />
               </svg>
             </div>
 
-            {/* Avatar - positioned to overlap wave */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-12">
-              <div className="relative">
-                <img
-                  src={user.avatar}
-                  alt="Avatar"
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover bg-white"
-                />
-              </div>
+            {/* Avatar Circle - positioned on the wave */}
+            <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '-40px' }}>
+              <img
+                src={user.avatar}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+              />
             </div>
           </div>
 
           {/* ===== Content ===== */}
-          <div className="pt-16 px-6 pb-6">
+          <div className="pt-14 px-6 pb-6">
             {/* Name and Job */}
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-1">
