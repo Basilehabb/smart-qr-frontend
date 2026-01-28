@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 
+
 export default function SmartCodePage({ params }: any) {
   const qrCode = params.code;
   const targetURL = `https://loly-for-accessories.vercel.app/qr/${qrCode}`;
@@ -21,6 +22,8 @@ export default function SmartCodePage({ params }: any) {
       }).then(() => setQrGenerated(true));
     }
   }, [targetURL]);
+
+  const publicQRURL = `/qr/${qrCode}`;
 
   const downloadQR = () => {
     if (canvasRef.current) {
@@ -182,33 +185,34 @@ export default function SmartCodePage({ params }: any) {
             <h2 className="text-2xl font-bold text-gray-800">الرابط</h2>
           </div>
           
-          <div className="flex gap-2">
-            <input
-              value={targetURL}
-              readOnly
-              className="flex-1 border-2 border-gray-200 px-4 py-3 rounded-xl bg-gray-50 text-sm font-mono focus:outline-none focus:border-indigo-400"
-            />
-            <button
-              onClick={copyURL}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 ${
-                copied
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-              }`}
-            >
-              {copied ? (
-                <span className="flex items-center gap-2">
-                  <span>✓</span>
-                  <span className="hidden sm:inline">تم النسخ</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <span>📋</span>
-                  <span className="hidden sm:inline">نسخ</span>
-                </span>
-              )}
-            </button>
-          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={targetURL}
+            readOnly
+            className="flex-1 border-2 border-gray-200 px-4 py-3 rounded-xl bg-gray-50 text-sm font-mono focus:outline-none focus:border-indigo-400"
+          />
+
+          <button
+            onClick={copyURL}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 ${
+              copied
+                ? "bg-green-500 text-white"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+            }`}
+          >
+            {copied ? "✓ تم النسخ" : "📋 نسخ"}
+          </button>
+
+          <a
+            href={`/qr/${qrCode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            🌍 فتح صفحة QR
+          </a>
+        </div>
+
 
           <p className="text-xs text-gray-500 mt-3 text-center">
             انسخ هذا الرابط والصقه في تطبيق NFC Tools
