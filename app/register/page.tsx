@@ -56,7 +56,7 @@ function RegisterForm() {
 
       /* 3️⃣ UPDATE phone + job */
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/update`,
         {
           phone: formData.phone,
           job: formData.job,
@@ -67,6 +67,7 @@ function RegisterForm() {
           },
         }
       );
+      
       
 
       /* 4️⃣ UPLOAD AVATAR */
