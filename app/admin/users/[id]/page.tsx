@@ -351,11 +351,11 @@ export default function UserDetailsPage() {
         fd.append("file", avatarFile);
       
         const res = await api.post(`/admin/users/${userId}/avatar`, fd, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
       
         editData.avatar = res.data.url;
       }
@@ -534,32 +534,17 @@ export default function UserDetailsPage() {
                     type="file"
                     hidden
                     accept="image/*"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
 
-                      const token = localStorage.getItem("admin-token");
-                      const fd = new FormData();
-                      fd.append("file", file);
+                      setAvatarFile(file);
 
-                      try {
-                        const res = await api.post("/auth/upload-avatar", fd, {
-                          headers: {
-                            Authorization: `Bearer ${token}`,
-                            // ❌ متحطش Content-Type هنا
-                          },
-                        });
-
-                        setEditData((prev) => ({
-                          ...prev,
-                          avatar: res.data.url,
-                        }));
-
-                        setAvatarPreview(res.data.url);
-                      } catch (err) {
-                        alert("Upload failed");
-                        console.error(err);
-                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setAvatarPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
 
