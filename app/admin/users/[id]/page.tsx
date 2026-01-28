@@ -528,16 +528,38 @@ export default function UserDetailsPage() {
                   <label className="px-4 py-2 bg-indigo-600 text-white rounded cursor-pointer">
                     Upload Image
                     <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setAvatarFile(file);
-                        setAvatarPreview(URL.createObjectURL(file));
-                      }}
-                    />
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const token = localStorage.getItem("admin-token");
+                      const fd = new FormData();
+                      fd.append("file", file);
+
+                      try {
+                        const res = await api.post("/auth/upload-avatar", fd, {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            // ❌ متحطش Content-Type هنا
+                          },
+                        });
+
+                        setEditData((prev) => ({
+                          ...prev,
+                          avatar: res.data.url,
+                        }));
+
+                        setAvatarPreview(res.data.url);
+                      } catch (err) {
+                        alert("Upload failed");
+                        console.error(err);
+                      }
+                    }}
+                  />
+
                   </label>
                 </div>
               </div>
