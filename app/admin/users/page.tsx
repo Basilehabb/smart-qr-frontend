@@ -31,13 +31,6 @@ export default function AdminUsersPage() {
 
   const [showDrawer, setShowDrawer] = useState(false);
 
-  // modal / create user
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-  const [newJob, setNewJob] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     const q = buildQueryFromURL();
@@ -158,8 +151,8 @@ export default function AdminUsersPage() {
                 </button>
 
                 <button
-                  onClick={() => router.push("/register")}
-                  className="px-4 py-2 bg-green-600 text-white rounded"
+                onClick={() => router.push("/register?from=admin")}
+                className="px-4 py-2 bg-green-600 text-white rounded"
                 >
                   + Create User
                 </button>

@@ -7,7 +7,9 @@ import axios from "axios";
 function RegisterForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const code = searchParams.get("code");
+  const from = searchParams.get("from"); // ✅ admin | null
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,17 +31,25 @@ function RegisterForm() {
     setError("");
 
     try {
-      /* 1️⃣ REGISTER (basic only) */
+      /* 1️⃣ REGISTER */
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
         {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          phone: formData.phone,
+          job: formData.job,
         }
       );
 
-      /* 2️⃣ LOGIN */
+      /* ✅ لو Admin */
+      if (from === "admin") {
+        router.push("/admin/users");
+        return;
+      }
+
+      /* 2️⃣ LOGIN (User only) */
       const loginRes = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
         {
@@ -67,8 +77,6 @@ function RegisterForm() {
           },
         }
       );
-      
-      
 
       /* 4️⃣ UPLOAD AVATAR */
       if (avatarFile) {
@@ -112,7 +120,7 @@ function RegisterForm() {
       }
 
       /* 6️⃣ REDIRECT */
-      router.push("/dashboard");
+      router.push("/");
     } catch (err: any) {
       console.error(err);
       setError(
@@ -128,7 +136,9 @@ function RegisterForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl">
 
-        <h2 className="text-3xl font-bold text-center">Create Account</h2>
+        <h2 className="text-3xl font-bold text-center">
+          {from === "admin" ? "Create User" : "Create Account"}
+        </h2>
 
         {error && (
           <div className="p-3 bg-red-50 text-red-700 rounded">{error}</div>
@@ -218,7 +228,7 @@ function RegisterForm() {
             disabled={loading}
             className="w-full py-3 bg-blue-600 text-white rounded font-semibold"
           >
-            {loading ? "Creating Account..." : "Create Account"}
+            {loading ? "Creating..." : "Create"}
           </button>
         </form>
       </div>
