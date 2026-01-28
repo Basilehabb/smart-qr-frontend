@@ -353,6 +353,7 @@ export default function UserDetailsPage() {
         const res = await api.post(`/admin/users/${userId}/avatar`, fd, {
   headers: {
     Authorization: `Bearer ${token}`,
+    "Content-Type": undefined,
   },
 });
 
