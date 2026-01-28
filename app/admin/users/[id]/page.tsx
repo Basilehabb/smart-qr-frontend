@@ -350,9 +350,12 @@ export default function UserDetailsPage() {
         const fd = new FormData();
         fd.append("file", avatarFile);
       
-        const res = await api.post("/auth/upload-avatar", fd, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await api.post(`/admin/users/${userId}/avatar`, fd, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+        
       
         editData.avatar = res.data.url;
       }
