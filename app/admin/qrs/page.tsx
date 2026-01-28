@@ -179,7 +179,7 @@ export default function AdminQRsPage() {
                       <td className="py-2 text-right space-x-2">
                         {/* Open QR */}
                         <a
-                          href={`/qr/${qr.code}`}
+                          href={`/admin/qr/${qr.code}`}
                           target="_blank"
                           className="px-3 py-1 bg-blue-600 text-white rounded"
                         >
