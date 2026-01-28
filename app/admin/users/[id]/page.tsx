@@ -46,6 +46,8 @@ export default function UserDetailsPage() {
   const [qrs, setQrs] = useState<any[]>([]);
   const [allQrs, setAllQrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -344,7 +346,17 @@ export default function UserDetailsPage() {
       for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
         cleanProfile[section] = { ...profile[section] };
       }
-
+      if (avatarFile) {
+        const fd = new FormData();
+        fd.append("file", avatarFile);
+      
+        const res = await api.post("/auth/upload-avatar", fd, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      
+        editData.avatar = res.data.url;
+      }
+      
       // ⭐ Use the new endpoint for profile updates
       const response = await api.put(
         `/admin/users/${userId}`,
@@ -501,15 +513,35 @@ export default function UserDetailsPage() {
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm mb-1">Avatar URL</label>
-                  <input
-                    className="border px-3 py-2 rounded w-full"
-                    value={editData.avatar}
-                    onChange={(e) => setEditData({ ...editData, avatar: e.target.value })}
-                    placeholder="https://..."
-                  />
+                <div className="col-span-2 space-y-3">
+                <label className="block text-sm mb-1">Avatar</label>
+
+                <div className="flex items-center gap-4">
+                  {(avatarPreview || editData.avatar) && (
+                    <img
+                      src={avatarPreview || editData.avatar}
+                      className="w-16 h-16 rounded-full object-cover border"
+                      alt="avatar"
+                    />
+                  )}
+
+                  <label className="px-4 py-2 bg-indigo-600 text-white rounded cursor-pointer">
+                    Upload Image
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setAvatarFile(file);
+                        setAvatarPreview(URL.createObjectURL(file));
+                      }}
+                    />
+                  </label>
                 </div>
+              </div>
+
               </div>
             )}
           </div>
