@@ -121,44 +121,6 @@ export default function AdminUsersPage() {
     fetchUsers({});
   }
 
-  // create user
-  const createUser = async () => {
-    const token = localStorage.getItem("admin-token");
-
-    if (!newName || !newEmail || !newPassword) {
-      alert("Name, Email, and Password are required");
-      return;
-    }
-
-    try {
-      const res = await api.post(
-        "/admin/users",
-        {
-          name: newName,
-          email: newEmail,
-          phone: newPhone,
-          job: newJob,
-          password: newPassword,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // refresh list
-      fetchUsers();
-      setShowCreateModal(false);
-      setNewName("");
-      setNewEmail("");
-      setNewPhone("");
-      setNewJob("");
-      setNewPassword("");
-
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Failed to create user");
-    }
-  };
-
   // delete user
   const deleteUser = async (userId: string) => {
     if (!confirm("هل تريد حذف هذا المستخدم؟")) return;
@@ -196,7 +158,7 @@ export default function AdminUsersPage() {
                 </button>
 
                 <button
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => router.push("/register")}
                   className="px-4 py-2 bg-green-600 text-white rounded"
                 >
                   + Create User
@@ -330,28 +292,6 @@ export default function AdminUsersPage() {
             <div className="flex gap-2 mt-3">
               <button onClick={applyFilters} className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Apply</button>
               <button onClick={clearFilters} className="flex-1 px-3 py-2 border rounded">Clear</button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-
-            <h2 className="text-xl font-semibold mb-4">Create User</h2>
-
-            <input className="border px-3 py-2 rounded w-full mb-3" placeholder="Full Name" value={newName} onChange={(e) => setNewName(e.target.value)} />
-            <input className="border px-3 py-2 rounded w-full mb-3" placeholder="Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-            <input className="border px-3 py-2 rounded w-full mb-3" placeholder="Phone (optional)" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
-            <input className="border px-3 py-2 rounded w-full mb-3" placeholder="Job (optional)" value={newJob} onChange={(e) => setNewJob(e.target.value)} />
-            <input className="border px-3 py-2 rounded w-full mb-4" placeholder="Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-
-            <div className="flex gap-3 justify-end">
-              <button className="px-4 py-2 border rounded" onClick={() => setShowCreateModal(false)}>Cancel</button>
-              <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={createUser}>Create</button>
             </div>
 
           </div>
