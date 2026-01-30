@@ -26,42 +26,33 @@ function normalizeLink(type: string, value: string) {
   switch (type) {
     case "facebook":
       return `https://www.facebook.com/${v.replace(/^@/, "")}/`;
-
     case "instagram":
       return `https://www.instagram.com/${v.replace(/^@/, "")}`;
-
     case "tiktok":
       return `https://www.tiktok.com/@${v.replace(/^@/, "")}`;
-
     case "youtube":
       return `https://www.youtube.com/@${v.replace(/^@/, "")}`;
-
     case "whatsapp": {
       const num = v.replace(/\D/g, "").replace(/^0/, "20");
       return `https://wa.me/${num}`;
     }
-
     case "phone": {
       const num = v.replace(/\D/g, "").replace(/^0/, "20");
       return `tel:+${num}`;
     }
-
     case "email":
       return `mailto:${v}`;
-
     case "website":
       return v.startsWith("http") ? v : `https://${v}`;
-
     case "paypal":
       return `https://paypal.me/${v}`;
-
     default:
       return v;
   }
 }
 
 /* =====================
-   DYNAMIC LINKS CONFIG
+   LINKS CONFIG
 ===================== */
 const LINK_SECTIONS = {
   social: [
@@ -85,8 +76,9 @@ function RegisterForm() {
 
   const code = searchParams.get("code");
   const from = searchParams.get("from"); // admin | null
+  const isAdminFlow = from === "admin";
 
-  /* ===== BASIC DATA ===== */
+  /* ===== BASIC ===== */
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -95,7 +87,7 @@ function RegisterForm() {
     job: "",
   });
 
-  /* ===== PROFILE LINKS ===== */
+  /* ===== PROFILE ===== */
   const [profile, setProfile] = useState<any>({
     social: {},
     contact: {},
@@ -111,7 +103,7 @@ function RegisterForm() {
   const [error, setError] = useState("");
 
   /* =====================
-     HANDLE SUBMIT
+     SUBMIT
   ===================== */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,28 +112,18 @@ function RegisterForm() {
 
     try {
       /* 1️⃣ REGISTER */
-      await axios.post(`${API}/auth/register`, {
-        ...formData,
-      });
+      await axios.post(`${API}/auth/register`, formData);
 
-      /* Admin flow ends here */
-      if (from === "admin") {
-        router.push("/admin/users");
-        return;
-      }
-
-      /* 2️⃣ LOGIN */
+      /* 2️⃣ LOGIN (حتى في admin) */
       const loginRes = await axios.post(`${API}/auth/login`, {
         email: formData.email,
         password: formData.password,
       });
 
       const token = loginRes.data.token;
-      localStorage.setItem("user-token", token);
 
-      /* 3️⃣ NORMALIZE + UPDATE PROFILE */
+      /* 3️⃣ NORMALIZE PROFILE */
       const normalizedProfile: any = {};
-
       Object.entries(profile).forEach(([section, links]: any) => {
         normalizedProfile[section] = {};
         Object.entries(links).forEach(([key, value]: any) => {
@@ -166,8 +148,8 @@ function RegisterForm() {
         });
       }
 
-      /* 5️⃣ LINK QR */
-      if (code) {
+      /* 5️⃣ LINK QR (user only) */
+      if (!isAdminFlow && code) {
         await axios.post(
           `${API}/qr/link`,
           { code },
@@ -177,7 +159,8 @@ function RegisterForm() {
         return;
       }
 
-      router.push("/");
+      /* 6️⃣ REDIRECT */
+      router.push(isAdminFlow ? "/admin/users" : "/");
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || "Something went wrong");
@@ -187,14 +170,14 @@ function RegisterForm() {
   };
 
   /* =====================
-     RENDER
+     UI
   ===================== */
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 p-6">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 space-y-8">
 
         <h2 className="text-3xl font-bold text-center">
-          {from === "admin" ? "Create User" : "Create Account"}
+          {isAdminFlow ? "Create User" : "Create Account"}
         </h2>
 
         {error && (
@@ -203,25 +186,19 @@ function RegisterForm() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* BASIC INFO */}
+          {/* BASIC */}
           <div className="grid grid-cols-2 gap-4">
-            {[
-              ["name", "Full Name"],
-              ["email", "Email"],
-              ["password", "Password"],
-              ["phone", "Phone"],
-              ["job", "Job"],
-            ].map(([key, label]) => (
+            {["name", "email", "password", "phone", "job"].map((k) => (
               <input
-                key={key}
-                type={key === "password" ? "password" : "text"}
-                placeholder={label}
-                required={key !== "phone" && key !== "job"}
-                value={(formData as any)[key]}
+                key={k}
+                type={k === "password" ? "password" : "text"}
+                placeholder={k}
+                value={(formData as any)[k]}
                 onChange={(e) =>
-                  setFormData({ ...formData, [key]: e.target.value })
+                  setFormData({ ...formData, [k]: e.target.value })
                 }
-                className="border rounded-lg px-4 py-3 w-full"
+                className="border rounded-lg px-4 py-3"
+                required={k !== "phone" && k !== "job"}
               />
             ))}
           </div>
@@ -229,10 +206,7 @@ function RegisterForm() {
           {/* AVATAR */}
           <div className="flex items-center gap-4">
             {avatarPreview && (
-              <img
-                src={avatarPreview}
-                className="w-16 h-16 rounded-full object-cover"
-              />
+              <img src={avatarPreview} className="w-16 h-16 rounded-full" />
             )}
             <label className="px-4 py-2 bg-indigo-600 text-white rounded cursor-pointer">
               Upload Avatar
@@ -250,7 +224,7 @@ function RegisterForm() {
             </label>
           </div>
 
-          {/* PROFILE LINKS */}
+          {/* LINKS */}
           {Object.entries(LINK_SECTIONS).map(([section, fields]) => (
             <div key={section}>
               <h3 className="font-semibold mb-2 capitalize">{section}</h3>
@@ -287,9 +261,6 @@ function RegisterForm() {
   );
 }
 
-/* =====================
-   PAGE WRAPPER
-===================== */
 export default function RegisterPage() {
   return (
     <Suspense fallback={<div className="text-center mt-20">Loading...</div>}>
