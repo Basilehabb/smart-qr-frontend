@@ -89,8 +89,8 @@ function RegisterForm() {
 
   /* ===== PROFILE ===== */
   const [profile, setProfile] = useState<any>({
-    social: {},
     contact: {},
+    social: {},
     payment: {},
     other: {},
   });

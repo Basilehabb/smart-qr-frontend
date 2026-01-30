@@ -25,8 +25,8 @@ type ProfileSections = {
 };
 
 const EMPTY_PROFILE: ProfileSections = {
-  social: {},
   contact: {},
+  social: {},
   payment: {},
   video: {},
   music: {},
