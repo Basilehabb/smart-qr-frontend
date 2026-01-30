@@ -7,7 +7,61 @@ import axios from "axios";
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 /* =====================
-   Dynamic Links Config
+   LINK NORMALIZER
+===================== */
+function normalizeLink(type: string, value: string) {
+  if (!value) return "";
+
+  const v = value.trim();
+
+  if (
+    v.startsWith("http://") ||
+    v.startsWith("https://") ||
+    v.startsWith("tel:") ||
+    v.startsWith("mailto:")
+  ) {
+    return v;
+  }
+
+  switch (type) {
+    case "facebook":
+      return `https://www.facebook.com/${v.replace(/^@/, "")}/`;
+
+    case "instagram":
+      return `https://www.instagram.com/${v.replace(/^@/, "")}`;
+
+    case "tiktok":
+      return `https://www.tiktok.com/@${v.replace(/^@/, "")}`;
+
+    case "youtube":
+      return `https://www.youtube.com/@${v.replace(/^@/, "")}`;
+
+    case "whatsapp": {
+      const num = v.replace(/\D/g, "").replace(/^0/, "20");
+      return `https://wa.me/${num}`;
+    }
+
+    case "phone": {
+      const num = v.replace(/\D/g, "").replace(/^0/, "20");
+      return `tel:+${num}`;
+    }
+
+    case "email":
+      return `mailto:${v}`;
+
+    case "website":
+      return v.startsWith("http") ? v : `https://${v}`;
+
+    case "paypal":
+      return `https://paypal.me/${v}`;
+
+    default:
+      return v;
+  }
+}
+
+/* =====================
+   DYNAMIC LINKS CONFIG
 ===================== */
 const LINK_SECTIONS = {
   social: [
@@ -18,8 +72,8 @@ const LINK_SECTIONS = {
   ],
   contact: [
     { key: "whatsapp", label: "WhatsApp" },
-    { key: "email", label: "Public Email" },
     { key: "phone", label: "Phone" },
+    { key: "email", label: "Public Email" },
   ],
   payment: [{ key: "paypal", label: "PayPal" }],
   other: [{ key: "website", label: "Website" }],
@@ -32,7 +86,7 @@ function RegisterForm() {
   const code = searchParams.get("code");
   const from = searchParams.get("from"); // admin | null
 
-  /* ========= BASIC DATA ========= */
+  /* ===== BASIC DATA ===== */
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,7 +95,7 @@ function RegisterForm() {
     job: "",
   });
 
-  /* ========= PROFILE LINKS ========= */
+  /* ===== PROFILE LINKS ===== */
   const [profile, setProfile] = useState<any>({
     social: {},
     contact: {},
@@ -49,7 +103,7 @@ function RegisterForm() {
     other: {},
   });
 
-  /* ========= AVATAR ========= */
+  /* ===== AVATAR ===== */
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -65,16 +119,12 @@ function RegisterForm() {
     setError("");
 
     try {
-      /* 1️⃣ REGISTER (basic only) */
+      /* 1️⃣ REGISTER */
       await axios.post(`${API}/auth/register`, {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        job: formData.job,
+        ...formData,
       });
 
-      /* Admin creates user only */
+      /* Admin flow ends here */
       if (from === "admin") {
         router.push("/admin/users");
         return;
@@ -89,13 +139,21 @@ function RegisterForm() {
       const token = loginRes.data.token;
       localStorage.setItem("user-token", token);
 
-      /* 3️⃣ UPDATE PROFILE (ALL LINKS 🔥) */
+      /* 3️⃣ NORMALIZE + UPDATE PROFILE */
+      const normalizedProfile: any = {};
+
+      Object.entries(profile).forEach(([section, links]: any) => {
+        normalizedProfile[section] = {};
+        Object.entries(links).forEach(([key, value]: any) => {
+          if (!value) return;
+          normalizedProfile[section][key] = normalizeLink(key, value);
+        });
+      });
+
       await axios.put(
         `${API}/auth/update`,
-        { profile },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { profile: normalizedProfile },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       /* 4️⃣ UPLOAD AVATAR */
@@ -115,7 +173,6 @@ function RegisterForm() {
           { code },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         router.push(`/qr/${code}`);
         return;
       }
@@ -133,8 +190,8 @@ function RegisterForm() {
      RENDER
   ===================== */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-100 p-6">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 space-y-8">
 
         <h2 className="text-3xl font-bold text-center">
           {from === "admin" ? "Create User" : "Create Account"}
@@ -144,54 +201,56 @@ function RegisterForm() {
           <div className="p-3 bg-red-100 text-red-700 rounded">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* ===== BASIC INFO ===== */}
+          {/* BASIC INFO */}
           <div className="grid grid-cols-2 gap-4">
-            <input placeholder="Full Name" required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="input" />
-
-            <input type="email" placeholder="Email" required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="input" />
-
-            <input type="password" placeholder="Password" required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="input" />
-
-            <input placeholder="Phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="input" />
-
-            <input placeholder="Job"
-              value={formData.job}
-              onChange={(e) => setFormData({ ...formData, job: e.target.value })}
-              className="input col-span-2" />
+            {[
+              ["name", "Full Name"],
+              ["email", "Email"],
+              ["password", "Password"],
+              ["phone", "Phone"],
+              ["job", "Job"],
+            ].map(([key, label]) => (
+              <input
+                key={key}
+                type={key === "password" ? "password" : "text"}
+                placeholder={label}
+                required={key !== "phone" && key !== "job"}
+                value={(formData as any)[key]}
+                onChange={(e) =>
+                  setFormData({ ...formData, [key]: e.target.value })
+                }
+                className="border rounded-lg px-4 py-3 w-full"
+              />
+            ))}
           </div>
 
-          {/* ===== AVATAR ===== */}
+          {/* AVATAR */}
           <div className="flex items-center gap-4">
             {avatarPreview && (
-              <img src={avatarPreview} className="w-16 h-16 rounded-full object-cover" />
+              <img
+                src={avatarPreview}
+                className="w-16 h-16 rounded-full object-cover"
+              />
             )}
-            <label className="btn-secondary cursor-pointer">
+            <label className="px-4 py-2 bg-indigo-600 text-white rounded cursor-pointer">
               Upload Avatar
-              <input hidden type="file" accept="image/*"
+              <input
+                hidden
+                type="file"
+                accept="image/*"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
                   setAvatarFile(f);
                   setAvatarPreview(URL.createObjectURL(f));
-                }} />
+                }}
+              />
             </label>
           </div>
 
-          {/* ===== PROFILE LINKS ===== */}
+          {/* PROFILE LINKS */}
           {Object.entries(LINK_SECTIONS).map(([section, fields]) => (
             <div key={section}>
               <h3 className="font-semibold mb-2 capitalize">{section}</h3>
@@ -200,6 +259,7 @@ function RegisterForm() {
                   <input
                     key={f.key}
                     placeholder={f.label}
+                    className="border rounded-lg px-4 py-2"
                     onChange={(e) =>
                       setProfile({
                         ...profile,
@@ -209,14 +269,16 @@ function RegisterForm() {
                         },
                       })
                     }
-                    className="input"
                   />
                 ))}
               </div>
             </div>
           ))}
 
-          <button disabled={loading} className="w-full py-3 bg-blue-600 text-white rounded font-bold">
+          <button
+            disabled={loading}
+            className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold text-lg"
+          >
             {loading ? "Creating..." : "Create"}
           </button>
         </form>
