@@ -133,8 +133,8 @@ export default async function Page({ params }: Props) {
         {/* ================= HEADER ================= */}
         <div className="relative">
 
-          {/* Cover Container - محصورة تماماً بـ clip-path */}
-          <div className="relative h-[300px]" style={{ clipPath: 'inset(0 0 0 0)' }}>
+          {/* Cover Container - الصورة جوا الـ curve فقط */}
+          <div className="relative h-[350px] overflow-hidden">
             {/* Background */}
             <div className="absolute inset-0 bg-black" />
 
@@ -143,17 +143,17 @@ export default async function Page({ params }: Props) {
               <img
                 src={user.avatar}
                 alt="cover"
-                className="absolute inset-0 w-full h-full object-cover object-center"
+                className="absolute inset-0 w-full h-full object-cover object-top"
               />
             )}
             
             {/* طبقات gradient على الجوانب لإخفاء الأطراف */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
           </div>
 
-          {/* ORIGINAL CURVE (unchanged shape) */}
-          <div className="absolute bottom-[-1px] left-0 w-full z-20 pointer-events-none">
+          {/* CURVE - فوق الصورة تماماً */}
+          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
             <svg
               viewBox="0 0 246 57"
               preserveAspectRatio="none"
@@ -192,7 +192,7 @@ export default async function Page({ params }: Props) {
             </svg>
           </div>
 
-          {/* LOGO - دائرة صغيرة بس اللوجو جواها كبير */}
+          {/* LOGO - فوق الصورة والـ curve */}
           <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 z-30">
             <div className="
               w-36 h-36
