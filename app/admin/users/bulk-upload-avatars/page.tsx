@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import AdminSidebar from "../../AdminSidebar";
+import axios from "axios";
+
 
 export default function BulkAvatarsPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -20,12 +22,13 @@ export default function BulkAvatarsPage() {
       const fd = new FormData();
       files.forEach((f) => fd.append("files", f));
 
-      const res = await api.post(
-        "/admin/users/bulk-upload-avatars",
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/admin/users/bulk-upload-avatars`,
         fd,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            // ❌ متحطش Content-Type
           },
         }
       );
