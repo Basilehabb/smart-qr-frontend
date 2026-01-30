@@ -93,7 +93,6 @@ function LinkItem({
 export default async function Page({ params }: Props) {
   const data = await fetchQr(params.code);
 
-  /* ================= QR NOT LINKED ================= */
   if (!data.user) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
@@ -101,11 +100,9 @@ export default async function Page({ params }: Props) {
           <h2 className="text-xl font-semibold mb-2">
             هذا الـ QR غير مربوط
           </h2>
-
           <p className="text-gray-600 mb-6">
             يمكنك إنشاء حساب جديد أو تسجيل الدخول لربط هذا الـ QR.
           </p>
-
           <div className="flex flex-col gap-3">
             <a
               href={`/register?code=${params.code}`}
@@ -113,7 +110,6 @@ export default async function Page({ params }: Props) {
             >
               Create Account & Link QR
             </a>
-
             <LoginToLinkButton code={params.code} />
           </div>
         </div>
@@ -121,7 +117,6 @@ export default async function Page({ params }: Props) {
     );
   }
 
-  /* ================= QR LINKED ================= */
   const user = data.user;
   const profile = user.profile || {};
 
@@ -136,85 +131,83 @@ export default async function Page({ params }: Props) {
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
         {/* ================= HEADER ================= */}
-        <div className="relative">
+          <div className="relative w-full h-[320px]">
 
-          {/* COVER IMAGE */}
-          <div className="relative h-[350px] overflow-hidden rounded-t-2xl">
-            <div className="absolute inset-0 bg-black" />
+          <svg
+            viewBox="0 0 375 320"
+            preserveAspectRatio="xMidYMid slice"
+            className="w-full h-full"
+          >
+            <defs>
+              {/* MASK */}
+              <mask id="curveMask">
+                <rect width="375" height="320" fill="white" />
+                <path
+                  d="
+                    M0,232
+                    C90,270 285,270 375,232
+                    L375,320
+                    L0,320
+                    Z
+                  "
+                  fill="black"
+                />
+              </mask>
+            </defs>
 
+            {/* IMAGE */}
             {user.avatar && (
-              <img
-                src={user.avatar}
-                alt="cover"
-                className="absolute inset-0 w-full h-full object-cover object-top"
+              <image
+                href={user.avatar}
+                x="0"
+                y="0"
+                width="375"
+                height="320"
+                preserveAspectRatio="xMidYMid slice"
+                mask="url(#curveMask)"
               />
             )}
-          </div>
 
-          {/* WHITE BASE تحت الكيرف (الحل الأساسي) */}
-          <div className="absolute bottom-0 left-0 w-full h-[90px] bg-white z-10" />
-
-          {/* CURVE (كما هو بدون تغيير) */}
-          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
-            <svg
-              viewBox="0 0 246 57"
-              preserveAspectRatio="none"
-              className="w-full h-[90px]"
-            >
-              <path
-                d="M 214.7168,6.1113281
-                   C 195.65271,5.9023124 172.37742,11.948182
-                   137.87305,32.529297
-                   110.16613,49.05604 86.980345,56.862784
-                   65.015625,57
-                   H 246 V 11.453125 Z"
-                fill="white"
-              />
-
-              <path
-                d="m 0,16.7221 v 19.052
-                   C 45.4067,63.7643
-                   82.6667,65.4583
-                   137.873,32.5286
-                   193.08,-0.401184
-                   219.54,3.87965
-                   246,11.4535
-                   V 6.51403
-                   C 185.24,-16.8661
-                   135.913,29.331
-                   97.6933,40.8564
-                   59.4733,52.3818
-                   33.6467,44.1494
-                   0,16.7221 Z"
-                fill="#000000"
-              />
-            </svg>
-          </div>
+            {/* BLACK CURVE */}
+            <path
+              d="
+                M0,232
+                C90,270 285,270 375,232
+              "
+              stroke="#000"
+              strokeWidth="12"
+              fill="none"
+            />
+          </svg>
 
           {/* LOGO */}
-          <div className="absolute bottom-[-72px] left-1/2 -translate-x-1/2 z-30">
-            <div
-              className="
-                w-40 h-40
-                rounded-full
-                bg-white
-                shadow-2xl
-                ring-[6px] ring-[#C9A441]
-                flex items-center justify-center
-                overflow-hidden
-              "
-            >
-              <img
-                src="/loly-logo.png"
-                alt="Loly Accessories"
-                className="w-full h-full object-contain p-6"
-              />
-            </div>
+          <div
+            className="
+              absolute
+              left-1/2
+              bottom-[-66px]
+              -translate-x-1/2
+              w-[132px]
+              h-[132px]
+              rounded-full
+              bg-white
+              ring-[6px] ring-[#C9A441]
+              shadow-xl
+              flex items-center justify-center
+              overflow-hidden
+            "
+          >
+            <img
+              src="/loly-logo.png"
+              alt="Loly Accessories"
+              className="w-full h-full object-contain p-4"
+            />
           </div>
-        </div>
+          </div>
+
 
         {/* ================= CONTENT ================= */}
-        <div className="px-6 pt-24 pb-8">
+        <div className="px-6 pt-20 pb-8">
 
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
