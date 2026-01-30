@@ -131,21 +131,22 @@ export default async function Page({ params }: Props) {
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
         {/* ================= HEADER ================= */}
-        <div className="relative overflow-hidden">
+        <div className="relative">
 
-          {/* Background */}
-          <div className="absolute inset-0 bg-black" />
+          {/* Cover Container - محصورة فوق الـ curve */}
+          <div className="relative h-[300px] overflow-hidden">
+            {/* Background */}
+            <div className="absolute inset-0 bg-black" />
 
-          {/* Cover */}
-          {user.avatar && (
-            <img
-              src={user.avatar}
-              alt="cover"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          )}
-
-          <div className="h-[300px]" />
+            {/* Cover */}
+            {user.avatar && (
+              <img
+                src={user.avatar}
+                alt="cover"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+          </div>
 
           {/* ORIGINAL CURVE (unchanged shape) */}
           <div className="absolute bottom-[-1px] left-0 w-full z-20">
@@ -191,20 +192,21 @@ export default async function Page({ params }: Props) {
         {/* ================= CONTENT ================= */}
         <div className="px-6 pt-6 pb-8">
 
-          {/* LOGO */}
-          <div className="flex justify-center -mt-20 mb-4">
+          {/* LOGO - أكبر وأوضح */}
+          <div className="flex justify-center -mt-24 mb-6">
             <div className="
-              w-28 h-28
+              w-40 h-40
               rounded-full
               bg-white
               shadow-xl
-              ring-4 ring-[#C9A441]
+              ring-[6px] ring-[#C9A441]
               flex items-center justify-center
+              p-2
             ">
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-20 h-20 object-contain"
+                className="w-32 h-32 object-contain"
               />
             </div>
           </div>
