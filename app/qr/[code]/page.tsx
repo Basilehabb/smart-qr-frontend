@@ -133,8 +133,8 @@ export default async function Page({ params }: Props) {
         {/* ================= HEADER ================= */}
         <div className="relative">
 
-          {/* Cover Container - محصورة فوق الـ curve */}
-          <div className="relative h-[300px] overflow-hidden">
+          {/* Cover Container - محصورة تماماً بـ clip-path */}
+          <div className="relative h-[300px]" style={{ clipPath: 'inset(0 0 0 0)' }}>
             {/* Background */}
             <div className="absolute inset-0 bg-black" />
 
@@ -146,10 +146,13 @@ export default async function Page({ params }: Props) {
                 className="absolute inset-0 w-full h-full object-cover"
               />
             )}
+            
+            {/* طبقة سوداء شفافة للتأكد */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
           </div>
 
           {/* ORIGINAL CURVE (unchanged shape) */}
-          <div className="absolute bottom-[-1px] left-0 w-full z-20">
+          <div className="absolute bottom-[-1px] left-0 w-full z-20 pointer-events-none">
             <svg
               viewBox="0 0 246 57"
               preserveAspectRatio="none"
@@ -187,29 +190,29 @@ export default async function Page({ params }: Props) {
               />
             </svg>
           </div>
-        </div>
 
-        {/* ================= CONTENT ================= */}
-        <div className="px-6 pt-6 pb-8">
-
-          {/* LOGO - أكبر وأوضح */}
-          <div className="flex justify-center -mt-24 mb-6">
+          {/* LOGO - فوق الصورة مباشرة */}
+          <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 z-30">
             <div className="
-              w-40 h-40
+              w-44 h-44
               rounded-full
               bg-white
-              shadow-xl
-              ring-[6px] ring-[#C9A441]
+              shadow-2xl
+              ring-[7px] ring-[#C9A441]
               flex items-center justify-center
-              p-2
+              p-3
             ">
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-32 h-32 object-contain"
+                className="w-36 h-36 object-contain"
               />
             </div>
           </div>
+        </div>
+
+        {/* ================= CONTENT ================= */}
+        <div className="px-6 pt-20 pb-8">
 
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
