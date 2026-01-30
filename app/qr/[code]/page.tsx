@@ -138,8 +138,10 @@ export default async function Page({ params }: Props) {
 
         {/* ================= HEADER ================= */}
         <div className="relative overflow-hidden">
+          {/* Black background */}
           <div className="absolute inset-0 bg-[#111111]" />
 
+          {/* Optional cover image */}
           {user.avatar && (
             <img
               src={user.avatar}
@@ -148,23 +150,44 @@ export default async function Page({ params }: Props) {
             />
           )}
 
+          {/* Height */}
           <div className="h-[280px]" />
 
-          {/* Wave */}
+          {/* === ORIGINAL CURVE (shape محفوظ – لون بس اتغير) === */}
           <div className="absolute bottom-[-1px] left-0 w-full z-20">
             <svg
               viewBox="0 0 246 57"
               preserveAspectRatio="none"
               className="w-full h-[90px]"
+              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M 214.7,6.1 C 195.6,5.9 172.3,11.9 137.8,32.5
-                   110.1,49 86.9,56.8 65,57 H 246 V 11.4 Z"
+                d="M 214.7168,6.1113281
+                   C 195.65271,5.9023124 172.37742,11.948182
+                   137.87305,32.529297
+                   110.16613,49.05604 86.980345,56.862784
+                   65.015625,57
+                   H 65 v 1 H 246 V 11.453125
+                   C 236.0775,8.6129313
+                   226.15525,6.2367376
+                   214.7168,6.1113281 Z"
                 fill="white"
               />
               <path
-                d="M 0,16.7 V 36 C 45,63 82,65 137,32
-                   193,-0.4 219,3.8 246,11.4 V 6.5 Z"
+                d="m 0,16.7221 v 19.052
+                   C 45.4067,63.7643
+                   82.6667,65.4583
+                   137.873,32.5286
+                   193.08,-0.401184
+                   219.54,3.87965
+                   246,11.4535
+                   V 6.51403
+                   C 185.24,-16.8661
+                   135.913,29.331
+                   97.6933,40.8564
+                   59.4733,52.3818
+                   33.6467,44.1494
+                   0,16.7221 Z"
                 fill="#111111"
               />
             </svg>
@@ -176,11 +199,11 @@ export default async function Page({ params }: Props) {
 
           {/* LOGO */}
           <div className="flex justify-center -mt-16 mb-4">
-            <div className="w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center">
+            <div className="w-24 h-24 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-white">
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-14 h-14 object-contain"
+                className="w-16 h-16 object-contain"
               />
             </div>
           </div>
