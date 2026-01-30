@@ -180,30 +180,26 @@ export default async function Page({ params }: Props) {
             />
           </svg>
 
-          {/* LOGO */}
-          <div
-            className="
-              absolute
-              left-1/2
-              bottom-[-66px]
-              -translate-x-1/2
-              w-[132px]
-              h-[132px]
+          {/* LOGO - فوق الصورة والـ curve */}
+          <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 z-30">
+            <div className="
+              w-36 h-36
               rounded-full
               bg-white
+              shadow-2xl
               ring-[6px] ring-[#C9A441]
-              shadow-xl
               flex items-center justify-center
               overflow-hidden
-            "
-          >
-            <img
-              src="/loly-logo.png"
-              alt="Loly Accessories"
-              className="w-full h-full object-contain p-4"
-            />
+              p-1
+            ">
+              <img
+                src="/loly-logo.png"
+                alt="Loly Accessories"
+                className="w-full h-full object-cover scale-[2]"
+              />
+            </div>
           </div>
-          </div>
+        </div>
 
 
         {/* ================= CONTENT ================= */}
