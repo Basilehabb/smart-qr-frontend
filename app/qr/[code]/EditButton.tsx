@@ -3,28 +3,35 @@
 export default function EditButton() {
   return (
     <button
-      className="px-4 py-2 bg-blue-600 text-white rounded"
       onClick={() => {
         const token = localStorage.getItem("user-token");
 
-        // 🔍 1) استخراج QR code من مسار الصفحة الحالية
-        const path = window.location.pathname; // مثال: /qr/K09GADBGRK
-        const qrCode = path.startsWith("/qr/") ? path.replace("/qr/", "") : null;
+        const path = window.location.pathname;
+        const qrCode = path.startsWith("/qr/")
+          ? path.replace("/qr/", "")
+          : null;
 
-        // 2) بناء رابط edit مع كود الـ QR
         const target = qrCode
           ? `/user/edit?code=${qrCode}`
           : "/user/edit";
 
         if (token) {
-          // 🔥 لو المستخدم مسجل دخول → روح لصفحة edit
           window.location.href = target;
         } else {
-          // 🔥 لو مش مسجل → احفظ return-url ثم login
           localStorage.setItem("return-url", target);
           window.location.href = "/login";
         }
       }}
+      className="
+        px-8 py-3
+        rounded-full
+        bg-gradient-to-r from-[#C9A441] to-[#B8962E]
+        text-white font-semibold
+        shadow-lg
+        hover:scale-[1.03]
+        hover:shadow-xl
+        transition-all
+      "
     >
       Edit Profile
     </button>
