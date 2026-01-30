@@ -143,12 +143,13 @@ export default async function Page({ params }: Props) {
               <img
                 src={user.avatar}
                 alt="cover"
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover object-center"
               />
             )}
             
-            {/* طبقة سوداء شفافة للتأكد */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+            {/* طبقات gradient على الجوانب لإخفاء الأطراف */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
           </div>
 
           {/* ORIGINAL CURVE (unchanged shape) */}
