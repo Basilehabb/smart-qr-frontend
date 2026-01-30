@@ -191,28 +191,29 @@ export default async function Page({ params }: Props) {
             </svg>
           </div>
 
-          {/* LOGO - فوق الصورة مباشرة - أكبر بكتير */}
-          <div className="absolute bottom-[-80px] left-1/2 -translate-x-1/2 z-30">
+          {/* LOGO - دائرة صغيرة بس اللوجو جواها كبير */}
+          <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 z-30">
             <div className="
-              w-52 h-52
+              w-36 h-36
               rounded-full
               bg-white
               shadow-2xl
-              ring-[8px] ring-[#C9A441]
+              ring-[6px] ring-[#C9A441]
               flex items-center justify-center
-              p-4
+              overflow-hidden
+              p-1
             ">
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-44 h-44 object-contain"
+                className="w-full h-full object-cover scale-150"
               />
             </div>
           </div>
         </div>
 
         {/* ================= CONTENT ================= */}
-        <div className="px-6 pt-24 pb-8">
+        <div className="px-6 pt-20 pb-8">
 
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
