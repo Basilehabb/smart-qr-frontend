@@ -10,9 +10,11 @@ export default function AdminSidebar() {
     { title: "Dashboard", path: "/admin/dashboard", icon: "📊" },
     { title: "Users", path: "/admin/users", icon: "👥" },
     { title: "Bulk Upload", path: "/admin/users/bulk-upload", icon: "📤" },
+    { title: "Bulk Avatars", path: "/admin/users/bulk-upload-avatars", icon: "🖼️" },
     { title: "QR Codes", path: "/admin/qrs", icon: "📱" },
     { title: "Scan Analytics", path: "/admin/scan-analytics", icon: "📈" },
   ];
+  
 
   const isActive = (path: string) => {
     // Exact match for bulk-upload to prevent conflicts
