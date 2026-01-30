@@ -133,8 +133,8 @@ export default async function Page({ params }: Props) {
         {/* ================= HEADER ================= */}
         <div className="relative">
 
-          {/* Cover Container - الصورة جوا الـ curve فقط */}
-          <div className="relative h-[350px] overflow-hidden">
+          {/* Cover Container - الصورة جوا الـ curve فقط بدون غمامة */}
+          <div className="relative h-[350px] overflow-hidden rounded-t-2xl">
             {/* Background */}
             <div className="absolute inset-0 bg-black" />
 
@@ -146,14 +146,10 @@ export default async function Page({ params }: Props) {
                 className="absolute inset-0 w-full h-full object-cover object-top"
               />
             )}
-            
-            {/* طبقات gradient على الجوانب لإخفاء الأطراف */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
           </div>
 
-          {/* CURVE - فوق الصورة تماماً */}
-          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
+          {/* CURVE - يغطي آخر جزء من الصورة */}
+          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none transform translate-y-[1px]">
             <svg
               viewBox="0 0 246 57"
               preserveAspectRatio="none"
