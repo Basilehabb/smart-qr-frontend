@@ -93,6 +93,7 @@ function LinkItem({
 export default async function Page({ params }: Props) {
   const data = await fetchQr(params.code);
 
+  /* ================= QR NOT LINKED ================= */
   if (!data.user) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
@@ -100,9 +101,11 @@ export default async function Page({ params }: Props) {
           <h2 className="text-xl font-semibold mb-2">
             هذا الـ QR غير مربوط
           </h2>
+
           <p className="text-gray-600 mb-6">
             يمكنك إنشاء حساب جديد أو تسجيل الدخول لربط هذا الـ QR.
           </p>
+
           <div className="flex flex-col gap-3">
             <a
               href={`/register?code=${params.code}`}
@@ -110,6 +113,7 @@ export default async function Page({ params }: Props) {
             >
               Create Account & Link QR
             </a>
+
             <LoginToLinkButton code={params.code} />
           </div>
         </div>
@@ -117,6 +121,7 @@ export default async function Page({ params }: Props) {
     );
   }
 
+  /* ================= QR LINKED ================= */
   const user = data.user;
   const profile = user.profile || {};
 
@@ -133,12 +138,10 @@ export default async function Page({ params }: Props) {
         {/* ================= HEADER ================= */}
         <div className="relative">
 
-          {/* Cover Container - الصورة جوا الـ curve فقط بدون غمامة */}
+          {/* COVER IMAGE */}
           <div className="relative h-[350px] overflow-hidden rounded-t-2xl">
-            {/* Background */}
             <div className="absolute inset-0 bg-black" />
 
-            {/* Cover */}
             {user.avatar && (
               <img
                 src={user.avatar}
@@ -148,8 +151,11 @@ export default async function Page({ params }: Props) {
             )}
           </div>
 
-          {/* CURVE - يغطي آخر جزء من الصورة */}
-          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none transform translate-y-[1px]">
+          {/* WHITE BASE تحت الكيرف (الحل الأساسي) */}
+          <div className="absolute bottom-0 left-0 w-full h-[90px] bg-white z-10" />
+
+          {/* CURVE (كما هو بدون تغيير) */}
+          <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
             <svg
               viewBox="0 0 246 57"
               preserveAspectRatio="none"
@@ -161,10 +167,7 @@ export default async function Page({ params }: Props) {
                    137.87305,32.529297
                    110.16613,49.05604 86.980345,56.862784
                    65.015625,57
-                   H 65 v 1 H 246 V 11.453125
-                   C 236.0775,8.6129313
-                   226.15525,6.2367376
-                   214.7168,6.1113281 Z"
+                   H 246 V 11.453125 Z"
                 fill="white"
               />
 
@@ -188,29 +191,30 @@ export default async function Page({ params }: Props) {
             </svg>
           </div>
 
-          {/* LOGO - فوق الصورة والـ curve */}
-          <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 z-30">
-            <div className="
-              w-36 h-36
-              rounded-full
-              bg-white
-              shadow-2xl
-              ring-[6px] ring-[#C9A441]
-              flex items-center justify-center
-              overflow-hidden
-              p-1
-            ">
+          {/* LOGO */}
+          <div className="absolute bottom-[-72px] left-1/2 -translate-x-1/2 z-30">
+            <div
+              className="
+                w-40 h-40
+                rounded-full
+                bg-white
+                shadow-2xl
+                ring-[6px] ring-[#C9A441]
+                flex items-center justify-center
+                overflow-hidden
+              "
+            >
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-full h-full object-cover scale-[2]"
+                className="w-full h-full object-contain p-6"
               />
             </div>
           </div>
         </div>
 
         {/* ================= CONTENT ================= */}
-        <div className="px-6 pt-20 pb-8">
+        <div className="px-6 pt-24 pb-8">
 
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
