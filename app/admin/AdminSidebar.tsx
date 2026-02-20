@@ -12,6 +12,7 @@ export default function AdminSidebar() {
     { title: "Bulk Upload", path: "/admin/users/bulk-upload", icon: "📤" },
     { title: "Bulk Avatars", path: "/admin/users/bulk-upload-avatars", icon: "🖼️" },
     { title: "QR Codes", path: "/admin/qrs", icon: "📱" },
+    { title: "QR Generator", path: "/admin/qr-generator", icon: "🔳" },
     { title: "Scan Analytics", path: "/admin/scan-analytics", icon: "📈" },
   ];
   
