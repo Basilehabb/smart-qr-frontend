@@ -317,14 +317,24 @@ export default function EditProfilePage() {
     if (!avatarFile) return null;
   
     try {
+      const token = localStorage.getItem("user-token");
+      if (!token) return null;
+  
       const fd = new FormData();
       fd.append("file", avatarFile);
   
-      const res = await api.post("/upload/avatar", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post(
+        "/auth/upload-avatar",
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
   
-      return res.data.url; // رابط الصورة من Cloudinary
+      return res.data.url;
     } catch (err) {
       console.error("upload avatar failed", err);
       return null;
