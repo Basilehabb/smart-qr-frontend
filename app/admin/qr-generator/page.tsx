@@ -21,14 +21,12 @@ export default function QRGenerator() {
   function handleDownload() {
     const canvas = qrRef.current?.querySelector("canvas");
     if (!canvas) return;
-
-    const pngUrl = canvas
-      .toDataURL("image/png")
-      .replace("image/png", "image/octet-stream");
-
+  
+    const jpgUrl = canvas.toDataURL("image/jpeg", 1.0);
+  
     const link = document.createElement("a");
-    link.href = pngUrl;
-    link.download = "qr-code.png";
+    link.href = jpgUrl;
+    link.download = "qr-code.jpg";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
