@@ -1,9 +1,11 @@
 "use client";
 
+import { api } from "@/lib/api";
+
 export default function EditButton() {
   return (
     <button
-      onClick={() => {
+      onClick={async () => {
         const token = localStorage.getItem("user-token");
 
         const path = window.location.pathname;
@@ -16,11 +18,21 @@ export default function EditButton() {
           : "/user/edit";
 
         if (token) {
-          window.location.href = target;
-        } else {
-          localStorage.setItem("return-url", target);
-          window.location.href = "/login";
+          try {
+            await api.get("/auth/me", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            window.location.href = target;
+            return;
+          } catch (err: any) {
+            if (err?.response?.status === 401) {
+              localStorage.removeItem("user-token");
+            }
+          }
         }
+
+        localStorage.setItem("return-url", target);
+        window.location.href = "/login";
       }}
       className="
         px-8 py-3
