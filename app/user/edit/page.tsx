@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api"; // your axios/fetch wrapper
+import { normalizeLink } from "@/lib/normalizeLink";
 import { ExternalLink } from "lucide-react";
 
 type Platform = {
@@ -196,29 +197,7 @@ export default function EditProfilePage() {
 
   function generateLink(platform: Platform, value: string) {
     if (!platform || !value) return value;
-    if (platform.template) {
-      return platform.template.replace("{PHONE}", digitsOnly(value)).replace("{VALUE}", encodeURIComponent(value));
-    }
-
-    // defaults
-    if (platform.id === "whatsapp") {
-      // ensure we have country code + digits to form wa.me link
-      let digits = digitsOnly(value);
-      // if value is phone without code, try attach countryCode if not present
-      if (!digits.startsWith("00") && !digits.startsWith("+") && !digits.startsWith(countryCode.replace("+", "")) && !digits.startsWith(countryCode)) {
-        digits = (countryCode.replace("+", "") || "") + digits;
-      }
-      return `https://wa.me/${digits}`;
-    }
-    if (platform.id === "instagram") {
-      const handle = value.replace(/^@/, "");
-      return `https://instagram.com/${handle}`;
-    }
-    if (platform.id === "website") {
-      if (/^https?:\/\//.test(value)) return value;
-      return `https://${value}`;
-    }
-    return value;
+    return normalizeLink(platform.id, value);
   }
 
   // Add field
@@ -374,7 +353,14 @@ async function saveProfile() {
 
     const cleanProfile: any = {};
     for (const section of Object.keys(profile) as (keyof ProfileSections)[]) {
-      cleanProfile[section] = { ...profile[section] };
+      cleanProfile[section] = {};
+      for (const [key, value] of Object.entries(profile[section])) {
+        if (value === null) {
+          cleanProfile[section][key] = null;
+          continue;
+        }
+        cleanProfile[section][key] = normalizeLink(key, String(value));
+      }
     }
 
     const payload: any = {

@@ -1,6 +1,7 @@
 import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
+import { normalizeLink } from "@/lib/normalizeLink";
 
 import {
   FaWhatsapp,
@@ -15,6 +16,7 @@ import {
   FaGamepad,
   FaLink,
   FaEnvelope,
+  FaSnapchatGhost,
 } from "react-icons/fa";
 
 type Props = { params: { code: string } };
@@ -39,6 +41,7 @@ const PLATFORM_TITLES: Record<string, string> = {
   paypal: "PayPal",
   spotify: "Spotify",
   email: "Email",
+  snapchat: "Snapchat",
 };
 
 /* ===== Icons ===== */
@@ -54,6 +57,7 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   spotify: <FaSpotify />,
   gaming: <FaGamepad />,
   email: <FaEnvelope />,
+  snapchat: <FaSnapchatGhost />,
   other: <FaLink />,
 };
 
@@ -69,9 +73,9 @@ function LinkItem({
 }) {
   return (
     <a
-      href={value}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={normalizeLink(platform, value)}
+      target={platform === "phone" || platform === "email" ? undefined : "_blank"}
+      rel={platform === "phone" || platform === "email" ? undefined : "noopener noreferrer"}
       className="
         flex items-center gap-4
         w-full px-6 py-4
