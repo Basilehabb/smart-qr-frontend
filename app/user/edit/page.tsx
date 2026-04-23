@@ -358,7 +358,9 @@ async function saveProfile() {
   setError(null);
   setSaving(true);
 
-  if (!isEmail(email)) {
+  const effectiveEmail = email.trim() || user?.email || "";
+
+  if (!effectiveEmail || !isEmail(effectiveEmail)) {
     setError("Invalid email");
     setSaving(false);
     return;
@@ -377,7 +379,7 @@ async function saveProfile() {
 
     const payload: any = {
       name,
-      email,
+      email: effectiveEmail,
       job,
       phone,
       countryCode,
@@ -519,6 +521,7 @@ async function saveProfile() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
+                  autoComplete="email"
                 />
 
                 {/* Phone (with country code box) */}
@@ -570,6 +573,7 @@ async function saveProfile() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="New password (optional)"
+                  autoComplete="new-password"
                 />
 
                 <label className="px-4 py-2 bg-indigo-600 text-white rounded text-center cursor-pointer w-full">
