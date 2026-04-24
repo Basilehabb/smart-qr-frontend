@@ -2,10 +2,14 @@
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 
+const publicBaseUrl =
+  process.env.NEXT_PUBLIC_PUBLIC_QR_BASE_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://loly-for-accessories.com";
 
 export default function SmartCodePage({ params }: any) {
   const qrCode = params.code;
-  const targetURL = `https://loly-for-accessories.vercel.app/qr/${qrCode}`;
+  const targetURL = `${publicBaseUrl.replace(/\/$/, "")}/qr/${qrCode}`;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [qrGenerated, setQrGenerated] = useState(false);
