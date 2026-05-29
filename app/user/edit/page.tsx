@@ -176,7 +176,7 @@ export default function EditProfilePage() {
 
   // Validation helpers
   function isEmail(v: string) {
-    return /\S+@\S+\.\S+/.test(v);
+    return !v.trim() || /\S+@\S+\.\S+/.test(v);
   }
   function isUrl(v: string) {
     try {
@@ -339,7 +339,7 @@ async function saveProfile() {
 
   const effectiveEmail = email.trim() || user?.email || "";
 
-  if (!effectiveEmail || !isEmail(effectiveEmail)) {
+  if (!isEmail(effectiveEmail)) {
     setError("Invalid email");
     setSaving(false);
     return;
@@ -443,7 +443,7 @@ async function saveProfile() {
 
             <div className="mt-4 text-center">
               <h3 className="text-xl font-semibold">{name || "No name"}</h3>
-              <p className="text-sm text-gray-500">{email}</p>
+              {email ? <p className="text-sm text-gray-500">{email}</p> : null}
               <p className="text-sm text-gray-500">{countryCode} {phone}</p>
             </div>
 
@@ -506,7 +506,7 @@ async function saveProfile() {
                   className="border rounded px-3 py-2 w-full"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
+                  placeholder="Email (optional)"
                   autoComplete="email"
                 />
 
