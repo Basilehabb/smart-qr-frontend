@@ -216,7 +216,7 @@ export default async function Page({ params }: Props) {
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="w-14 h-14 object-cover"
+                className="w-24 h-24 object-cover scale-150"
               />
             </div>
           </div>
