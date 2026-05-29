@@ -178,34 +178,6 @@ export default async function Page({ params }: Props) {
             </svg>
           </div>
 
-            {/* IMAGE */}
-            {user.avatar && (
-              <image
-                href={user.avatar}
-                x="0"
-                y="0"
-                width="375"
-                height="320"
-                preserveAspectRatio="xMidYMid meet"
-                mask="url(#curveMask)"
-              />
-            )}
-
-            {/* BLACK CURVE */}
-            <path
-              d="
-                M0,232
-                C90,270 285,270 375,232
-              "
-              stroke="#000"
-              strokeWidth="12"
-              fill="none"
-            />
-          </svg>
-
-        </div>
-
-
         {/* ================= CONTENT ================= */}
         <div className="px-6 pt-8 pb-8">
 
