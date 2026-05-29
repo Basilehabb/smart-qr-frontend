@@ -131,29 +131,52 @@ export default async function Page({ params }: Props) {
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
 
         {/* ================= HEADER ================= */}
-          <div className="relative w-full h-[320px]">
+          <div className="relative w-full h-[420px]">
+            <svg
+              viewBox="0 0 375 420"
+              preserveAspectRatio="xMidYMid slice"
+              className="w-full h-full"
+            >
+              <defs>
+                <mask id="curveMask">
+                  <rect width="375" height="420" fill="white" />
+                  <path
+                    d="
+                      M0,332
+                      C90,370 285,370 375,332
+                      L375,420
+                      L0,420
+                      Z
+                    "
+                    fill="black"
+                  />
+                </mask>
+              </defs>
 
-          <svg
-            viewBox="0 0 375 320"
-            preserveAspectRatio="xMidYMid slice"
-            className="w-full h-full"
-          >
-            <defs>
-              {/* MASK */}
-              <mask id="curveMask">
-                <rect width="375" height="320" fill="white" />
-                <path
-                  d="
-                    M0,232
-                    C90,270 285,270 375,232
-                    L375,320
-                    L0,320
-                    Z
-                  "
-                  fill="black"
+              {user.avatar && (
+                <image
+                  href={user.avatar}
+                  x="0"
+                  y="0"
+                  width="375"
+                  height="420"
+                  preserveAspectRatio="xMidYMid slice"
+                  mask="url(#curveMask)"
                 />
-              </mask>
-            </defs>
+              )}
+
+              {/* BLACK CURVE */}
+              <path
+                d="
+                  M0,332
+                  C90,370 285,370 375,332
+                "
+                stroke="#000"
+                strokeWidth="12"
+                fill="none"
+              />
+            </svg>
+          </div>
 
             {/* IMAGE */}
             {user.avatar && (
