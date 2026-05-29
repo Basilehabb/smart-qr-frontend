@@ -212,11 +212,11 @@ export default async function Page({ params }: Props) {
 
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
             <span>Powered by</span>
-            <div className="rounded-full border-2 border-[#C9A441] p-1">
+            <div className="rounded-full border-2 border-[#C9A441] p-1.5 w-16 h-16 flex items-center justify-center">
               <img
                 src="/loly-logo.png"
                 alt="Loly Accessories"
-                className="h-10 w-10 object-contain rounded-full"
+                className="w-full h-full object-contain rounded-full"
               />
             </div>
           </div>
