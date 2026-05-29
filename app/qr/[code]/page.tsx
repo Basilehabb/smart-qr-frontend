@@ -1,7 +1,7 @@
 import React from "react";
 import EditButton from "./EditButton";
 import LoginToLinkButton from "./LoginToLinkButton";
-import { normalizeLink } from "@/lib/normalizeLink";
+import { getBasePlatformId, getProfileEntryTitle, normalizeLink } from "@/lib/normalizeLink";
 
 import {
   FaWhatsapp,
@@ -16,8 +16,11 @@ import {
   FaGamepad,
   FaLink,
   FaEnvelope,
+  FaLinkedin,
   FaSnapchatGhost,
+  FaMoneyBillWave,
 } from "react-icons/fa";
+import { FaThreads, FaXTwitter } from "react-icons/fa6";
 
 type Props = { params: { code: string } };
 
@@ -29,31 +32,20 @@ async function fetchQr(code: string) {
   return res.json();
 }
 
-/* ===== Titles ===== */
-const PLATFORM_TITLES: Record<string, string> = {
-  instagram: "Instagram",
-  phone: "Phone",
-  whatsapp: "WhatsApp",
-  facebook: "Facebook",
-  tiktok: "TikTok",
-  website: "Website",
-  youtube: "YouTube",
-  paypal: "PayPal",
-  spotify: "Spotify",
-  email: "Email",
-  snapchat: "Snapchat",
-};
-
 /* ===== Icons ===== */
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   instagram: <FaInstagram />,
   phone: <FaPhoneAlt />,
   whatsapp: <FaWhatsapp />,
   facebook: <FaFacebook />,
+  x: <FaXTwitter />,
+  threads: <FaThreads />,
+  linkedin: <FaLinkedin />,
   tiktok: <FaTiktok />,
   website: <FaGlobe />,
   youtube: <FaYoutube />,
   paypal: <FaPaypal />,
+  instapay: <FaMoneyBillWave />,
   spotify: <FaSpotify />,
   gaming: <FaGamepad />,
   email: <FaEnvelope />,
@@ -71,11 +63,15 @@ function LinkItem({
   value: string;
   platform: string;
 }) {
+  const basePlatform = getBasePlatformId(platform);
+  const href = normalizeLink(basePlatform, value);
+  const opensNewTab = !["phone", "email"].includes(basePlatform);
+
   return (
     <a
-      href={normalizeLink(platform, value)}
-      target={platform === "phone" || platform === "email" ? undefined : "_blank"}
-      rel={platform === "phone" || platform === "email" ? undefined : "noopener noreferrer"}
+      href={href}
+      target={opensNewTab ? "_blank" : undefined}
+      rel={opensNewTab ? "noopener noreferrer" : undefined}
       className="
         flex items-center gap-4
         w-full px-6 py-4
@@ -87,7 +83,7 @@ function LinkItem({
       "
     >
       <div className="w-9 h-9 rounded-full bg-black/20 flex items-center justify-center text-lg">
-        {PLATFORM_ICONS[platform] || PLATFORM_ICONS.other}
+        {PLATFORM_ICONS[basePlatform] || PLATFORM_ICONS.other}
       </div>
       <span className="flex-1 text-left">{title}</span>
     </a>
@@ -223,7 +219,7 @@ export default async function Page({ params }: Props) {
               <LinkItem
                 key={key}
                 platform={key}
-                title={PLATFORM_TITLES[key] || key}
+                title={getProfileEntryTitle(key, String(value))}
                 value={String(value)}
               />
             ))}
