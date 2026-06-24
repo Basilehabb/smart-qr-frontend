@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "../AdminSidebar";
 import QRCode from "qrcode";
+import jsPDF from "jspdf";
 
 export default function AdminQRsPage() {
   const router = useRouter();
@@ -81,114 +82,50 @@ export default function AdminQRsPage() {
     }
   };
 
-  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  const downloadBlob = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const svgToJpgBlob = async (svgMarkup: string, width: number, height: number) => {
-    const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-
-    try {
-      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = url;
-      });
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Canvas context unavailable");
-      }
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(image, 0, 0, width, height);
-
-      const jpgBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((result) => {
-          if (result) resolve(result);
-          else reject(new Error("Failed to create JPG"));
-        }, "image/jpeg", 1);
-      });
-
-      return jpgBlob;
-    } finally {
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  const downloadBulkQrsAssets = async (codes: string[]) => {
-    const pageWidth = 1240;
-    const pageHeight = 1754;
-    const margin = 70;
+  const downloadBulkQrsPdf = async (codes: string[]) => {
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 12;
     const columns = 3;
     const rows = 4;
-    const gap = 36;
+    const gap = 10;
     const pageSize = columns * rows;
     const cellWidth = (pageWidth - margin * 2 - gap * (columns - 1)) / columns;
     const cellHeight = (pageHeight - margin * 2 - gap * (rows - 1)) / rows;
-    const qrSize = Math.min(cellWidth - 50, cellHeight - 95);
+    const qrSize = Math.min(cellWidth, cellHeight);
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const pages = Math.ceil(codes.length / pageSize);
 
-    for (let pageIndex = 0; pageIndex < pages; pageIndex += 1) {
-      const pageCodes = codes.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
-      const elements: string[] = [
-        `<rect x="0" y="0" width="${pageWidth}" height="${pageHeight}" fill="#ffffff" />`
-      ];
-
-      for (let i = 0; i < pageCodes.length; i += 1) {
-        const column = i % columns;
-        const row = Math.floor(i / columns);
-        const cellX = margin + column * (cellWidth + gap);
-        const cellY = margin + row * (cellHeight + gap);
-        const qrX = cellX + (cellWidth - qrSize) / 2;
-        const qrY = cellY + 24;
-        const code = pageCodes[i];
-        const targetUrl = `${baseUrl}/qr/${code}`;
-        const qrSvg = await QRCode.toString(targetUrl, {
-          type: "svg",
-          width: 1000,
-          margin: 1,
-        });
-        const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`;
-
-        elements.push(
-          `<rect x="${cellX}" y="${cellY}" width="${cellWidth}" height="${cellHeight}" rx="22" ry="22" fill="#ffffff" stroke="#111827" stroke-width="3" />`,
-          `<image href="${svgDataUrl}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}" />`,
-          `<text x="${cellX + cellWidth / 2}" y="${qrY + qrSize + 42}" font-family="Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#111827">${code}</text>`,
-          `<text x="${cellX + cellWidth / 2}" y="${qrY + qrSize + 76}" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#4b5563">${targetUrl}</text>`
-        );
+    for (let i = 0; i < codes.length; i += 1) {
+      if (i > 0 && i % pageSize === 0) {
+        pdf.addPage("a4", "portrait");
       }
 
-      const svgMarkup = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">
-          ${elements.join("")}
-        </svg>
-      `.trim();
+      const indexOnPage = i % pageSize;
+      const column = indexOnPage % columns;
+      const row = Math.floor(indexOnPage / columns);
+      const cellX = margin + column * (cellWidth + gap);
+      const cellY = margin + row * (cellHeight + gap);
+      const targetUrl = `${baseUrl}/qr/${codes[i]}`;
+      const imageData = await QRCode.toDataURL(targetUrl, {
+        width: 1400,
+        margin: 1,
+        errorCorrectionLevel: "H",
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
 
-      downloadBlob(
-        new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" }),
-        `smart-qr-bulk-page-${pageIndex + 1}.svg`
-      );
-
-      const jpgBlob = await svgToJpgBlob(svgMarkup, pageWidth, pageHeight);
-      downloadBlob(jpgBlob, `smart-qr-bulk-page-${pageIndex + 1}.jpg`);
-      await wait(150);
+      pdf.addImage(imageData, "PNG", cellX, cellY, qrSize, qrSize, undefined, "FAST");
     }
+
+    pdf.save(`smart-qr-bulk-${codes.length}.pdf`);
   };
 
   const createBulkQrs = async () => {
@@ -213,11 +150,11 @@ export default function AdminQRsPage() {
       const createdCodes = createdQrs.map((qr: any) => qr.code);
 
       setQrs((prev) => [...createdQrs, ...prev]);
-      await downloadBulkQrsAssets(createdCodes);
+      await downloadBulkQrsPdf(createdCodes);
       setShowBulkModal(false);
       setBulkCount("10");
 
-      alert(`${createdCodes.length} QR codes created and downloaded as SVG + JPG successfully!`);
+      alert(`${createdCodes.length} QR codes created and downloaded as high-quality PDF successfully!`);
     } catch (err: any) {
       alert(err.response?.data?.message || "Failed to create QR codes");
     } finally {
@@ -426,7 +363,7 @@ export default function AdminQRsPage() {
             />
 
             <p className="text-gray-500 text-sm mb-4">
-              Generate from 1 to 100 QR codes in one batch, then auto-download printable SVG and JPG pages.
+              Generate from 1 to 100 QR codes in one batch, then auto-download one high-quality PDF file.
             </p>
 
             <div className="flex justify-end gap-3">
