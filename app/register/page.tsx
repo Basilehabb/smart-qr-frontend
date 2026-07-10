@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
@@ -19,6 +19,17 @@ type Platform = {
   requires?: "phone" | "url" | "text" | null;
   template?: string | null;
   icon?: string | null;
+};
+
+type RegistrationPlan = {
+  key: string;
+  name: string;
+  features: {
+    canEditProfile?: boolean;
+    maxLinks?: number | null;
+    allowDuplicateType?: boolean;
+    blockedSections?: string[];
+  };
 };
 
 type ProfileSections = {
@@ -79,6 +90,28 @@ function RegisterForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [plan, setPlan] = useState<RegistrationPlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [planError, setPlanError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    api.get("/auth/default-plan")
+      .then((response) => {
+        if (active) setPlan(response.data.plan || null);
+      })
+      .catch(() => {
+        if (active) setPlanError("Could not load the current plan. Please refresh and try again.");
+      })
+      .finally(() => {
+        if (active) setPlanLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function isPhone(value: string) {
     return /^[+\d][\d\s\-()]{4,}$/.test(value.trim());
@@ -101,11 +134,85 @@ function RegisterForm() {
     return getProfileEntryTitle(key, value);
   }
 
+  const blockedSections = plan?.features.blockedSections || [];
+  const rawMaxLinks = plan?.features.maxLinks;
+  const maxLinks = typeof rawMaxLinks === "number" ? rawMaxLinks : null;
+  const canEditProfile = plan?.features.canEditProfile !== false;
+  const linkCount = Object.values(profile).reduce(
+    (total, section) => total + Object.values(section).filter((value) => String(value).trim() !== "").length,
+    0
+  );
+
+  function allowsDuplicateType() {
+    return plan?.features.allowDuplicateType === true;
+  }
+
+  function canAddMoreLinks() {
+    return Boolean(plan) && canEditProfile && (maxLinks === null || linkCount < maxLinks);
+  }
+
+  function isBlockedSection(section: keyof ProfileSections) {
+    return blockedSections.includes(section);
+  }
+
+  function hasPlatformType(platformId: string) {
+    const basePlatformId = getBasePlatformId(platformId);
+    return Object.values(profile).some((section) => Object.keys(section).some((key) => getBasePlatformId(key) === basePlatformId));
+  }
+
+  function isPlatformAllowed(platform: Platform) {
+    const category = (platform.category || "other") as keyof ProfileSections;
+    return canEditProfile && !isBlockedSection(category) && (allowsDuplicateType() || !hasPlatformType(platform.id));
+  }
+
+  function planLimitMessage() {
+    if (!plan) return "Could not load the current plan. Please refresh and try again.";
+    if (!canEditProfile && linkCount > 0) return "Your current plan does not include profile editing.";
+    if (maxLinks !== null && linkCount > maxLinks) return "You reached your plan limit. Upgrade to add more links.";
+    if (!allowsDuplicateType()) {
+      const counts = new Map<string, number>();
+      for (const section of Object.values(profile)) {
+        for (const key of Object.keys(section)) {
+          const baseType = getBasePlatformId(key);
+          counts.set(baseType, (counts.get(baseType) || 0) + 1);
+        }
+      }
+      if ([...counts.values()].some((count) => count > 1)) {
+        return "Your current plan allows one link for each platform type.";
+      }
+    }
+    if (blockedSections.some((section) => Object.keys(profile[section as keyof ProfileSections]).length > 0)) {
+      return "Your current plan does not include one or more selected sections.";
+    }
+    return "";
+  }
+
+  function addLinkLimitMessage() {
+    if (!plan) return "Could not load the current plan. Please refresh and try again.";
+    if (!canEditProfile) return "Your current plan does not include profile editing.";
+    if (maxLinks !== null && linkCount >= maxLinks) return "You reached your plan limit. Upgrade to add more links.";
+    return planLimitMessage() || "This link is not included in your current plan.";
+  }
+
+  useEffect(() => {
+    if (!blockedSections.includes(activeTab)) return;
+    const firstAllowedSection = SECTIONS.find((section) => !blockedSections.includes(section.key));
+    if (firstAllowedSection) setActiveTab(firstAllowedSection.key);
+  }, [activeTab, plan]);
+
   function addPlatformToProfile(platformId: string, rawValue: string) {
     const platform = platforms.find((item) => item.id === platformId);
-    if (!platform) return;
+    if (!platform) return false;
 
     const category = (platform.category || "other") as keyof ProfileSections;
+    if (!canAddMoreLinks()) {
+      setError(addLinkLimitMessage());
+      return false;
+    }
+    if (!isPlatformAllowed(platform)) {
+      setError("This link is not included in your current plan.");
+      return false;
+    }
     const entryKey = getNextPlatformKey(platform.id, profile[category] || {});
     const value = normalizeLink(platform.id, rawValue);
 
@@ -116,6 +223,7 @@ function RegisterForm() {
         [entryKey]: value,
       },
     }));
+    return true;
   }
 
   function updateProfileValue(section: keyof ProfileSections, key: string, value: string) {
@@ -164,38 +272,40 @@ function RegisterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
+    if (planLoading || !plan) {
+      setError(planError || "Loading the current plan. Please wait a moment.");
+      return;
+    }
+
+    const restriction = planLimitMessage();
+    if (restriction) {
+      setError(restriction);
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      await api.post("/auth/register", {
+      const registration = await api.post("/auth/register-and-link-qr", {
         name: formData.name,
         phone: formData.phone,
         password: formData.password,
         job: formData.job,
+        profile: buildNormalizedProfile(),
+        code: code || undefined,
       });
 
-      const loginRes = await api.post("/auth/login", {
-        phone: formData.phone,
-        password: formData.password,
-      });
-
-      const token = loginRes.data.token;
-
-      await api.put(
-        "/auth/update",
-        { profile: buildNormalizedProfile() },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      await uploadAvatar(token);
+      const token = registration.data.token;
+      localStorage.setItem("user-token", token);
+      try {
+        await uploadAvatar(token);
+      } catch (avatarError) {
+        console.error("Avatar upload failed after account creation", avatarError);
+      }
 
       if (!isAdminFlow && code) {
-        await api.post(
-          "/qr/link",
-          { code },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
         router.push(`/qr/${code}`);
         return;
       }
@@ -203,7 +313,12 @@ function RegisterForm() {
       router.push(isAdminFlow ? "/admin/users" : "/");
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || "Something went wrong");
+      const response = err.response?.data;
+      if (response?.code === "UPGRADE_REQUIRED") {
+        setError("Your profile exceeds the current plan limits. Remove restricted links and try again.");
+      } else {
+        setError(response?.message || "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -342,11 +457,12 @@ function RegisterForm() {
                   key={section.key}
                   type="button"
                   onClick={() => setActiveTab(section.key)}
+                  disabled={planLoading || !canEditProfile || isBlockedSection(section.key)}
                   className={`px-3 py-2 rounded-t ${
                     activeTab === section.key
                       ? "bg-white border-l border-r border-t -mb-px text-indigo-600"
                       : "text-gray-600"
-                  }`}
+                  } disabled:cursor-not-allowed disabled:opacity-40`}
                 >
                   {section.title}
                 </button>
@@ -418,16 +534,30 @@ function RegisterForm() {
               </div>
             </div>
 
+            {planLoading ? <div className="rounded bg-slate-50 px-3 py-2 text-sm text-slate-600">Loading the current plan...</div> : null}
+            {planError ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{planError}</div> : null}
+            {plan ? (
+              <div className="rounded bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+                New accounts use the <b>{plan.name}</b> plan.
+                {maxLinks !== null ? ` It includes up to ${maxLinks} links.` : " It includes unlimited links."}
+              </div>
+            ) : null}
             {error ? <div className="text-red-600">{error}</div> : null}
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
-              <button
-                type="button"
-                onClick={() => setShowAddDialog(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto"
-              >
-                + Add Link
-              </button>
+              <div className="w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowAddDialog(true)}
+                  disabled={!canAddMoreLinks()}
+                  className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  + Add Link
+                </button>
+                {!canAddMoreLinks() && plan ? (
+                  <p className="mt-2 text-sm text-amber-700">{addLinkLimitMessage()}</p>
+                ) : null}
+              </div>
 
               <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                 <button
@@ -440,8 +570,8 @@ function RegisterForm() {
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto"
+                  disabled={loading || planLoading || !plan}
+                  className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? "Creating..." : "Create"}
                 </button>
@@ -482,12 +612,13 @@ function RegisterForm() {
                         <button
                           key={platform.id}
                           type="button"
+                          disabled={!canAddMoreLinks() || !isPlatformAllowed(platform)}
                           onClick={() => {
                             setSelectedPlatform(platform.id);
                             setSelectedValue("");
                             setShowAddDialog(true);
                           }}
-                          className="px-3 py-1 border rounded text-sm bg-purple-50"
+                          className="px-3 py-1 border rounded text-sm bg-purple-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {platform.title}
                         </button>
@@ -514,7 +645,7 @@ function RegisterForm() {
                 >
                   <option value="">Choose platform</option>
                   {platforms.map((platform) => (
-                    <option key={platform.id} value={platform.id}>
+                    <option key={platform.id} value={platform.id} disabled={!isPlatformAllowed(platform)}>
                       {platform.title}
                     </option>
                   ))}
@@ -553,6 +684,14 @@ function RegisterForm() {
                       setError("Invalid platform");
                       return;
                     }
+                    if (!canAddMoreLinks()) {
+                      setError(addLinkLimitMessage());
+                      return;
+                    }
+                    if (!isPlatformAllowed(platform)) {
+                      setError("This link is not included in your current plan.");
+                      return;
+                    }
 
                     if (platform.requires === "phone" && !isPhone(selectedValue)) {
                       setError("Please provide a valid phone number");
@@ -570,7 +709,7 @@ function RegisterForm() {
                     }
 
                     setError("");
-                    addPlatformToProfile(selectedPlatform, selectedValue);
+                    if (!addPlatformToProfile(selectedPlatform, selectedValue)) return;
                     setShowAddDialog(false);
                     setSelectedPlatform("");
                     setSelectedValue("");
