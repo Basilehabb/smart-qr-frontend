@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { getAdminTokenOrRedirect, handleAdminAuthError } from "@/lib/adminSession";
@@ -33,7 +33,6 @@ export default function AdminUsersPage() {
   const [hasQR, setHasQR] = useState<string>("");
   const [job, setJob] = useState("");
   const [product, setProduct] = useState("");
-  const [phoneExists, setPhoneExists] = useState<string>("");
   const [plan, setPlan] = useState("");
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
@@ -42,6 +41,7 @@ export default function AdminUsersPage() {
   const [limit, setLimit] = useState(20);
 
   const [showDrawer, setShowDrawer] = useState(false);
+  const filtersReady = useRef(false);
 
 
   useEffect(() => {
@@ -51,7 +51,6 @@ export default function AdminUsersPage() {
     if (q.hasQR) setHasQR(String(q.hasQR));
     if (q.job) setJob(String(q.job));
     if (q.product) setProduct(String(q.product));
-    if (q.phoneExists) setPhoneExists(String(q.phoneExists));
     if (q.plan) setPlan(String(q.plan));
     if (q.createdFrom) setCreatedFrom(String(q.createdFrom));
     if (q.createdTo) setCreatedTo(String(q.createdTo));
@@ -59,7 +58,9 @@ export default function AdminUsersPage() {
     if (q.page) setPage(Number(q.page));
     if (q.limit) setLimit(Number(q.limit));
   
-    fetchUsers(q);
+    fetchUsers(q).finally(() => {
+      filtersReady.current = true;
+    });
     const token = localStorage.getItem("admin-token");
     api.get("/admin/plans", { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => setPlans(response.data.plans || []))
@@ -74,14 +75,37 @@ export default function AdminUsersPage() {
     hasQR: hasQR || undefined,
     job: job || undefined,
     product: product || undefined,
-    phoneExists: phoneExists || undefined,
     plan: plan || undefined,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
     sort: sort || undefined,
     page: page || 1,
     limit: limit || 20,
-  }), [search, isAdmin, hasQR, job, product, phoneExists, plan, createdFrom, createdTo, sort, page, limit]);
+  }), [search, isAdmin, hasQR, job, product, plan, createdFrom, createdTo, sort, page, limit]);
+
+  useEffect(() => {
+    if (!filtersReady.current) return;
+
+    const timeout = window.setTimeout(() => {
+      setPage(1);
+      fetchUsers({
+        search: search || undefined,
+        isAdmin: isAdmin || undefined,
+        hasQR: hasQR || undefined,
+        job: job || undefined,
+        product: product || undefined,
+        plan: plan || undefined,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
+        sort: sort || undefined,
+        page: 1,
+        limit: limit || 20,
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, isAdmin, hasQR, job, product, plan, createdFrom, createdTo, sort, limit]);
 
   // Fetch users with current query and update URL
   async function fetchUsers(overrides?: any) {
@@ -123,20 +147,12 @@ export default function AdminUsersPage() {
     }
   }
 
-  // handle apply filters
-  function applyFilters() {
-    setPage(1);
-    fetchUsers({ page: 1 });
-    setShowDrawer(false);
-  }
-
   function clearFilters() {
     setSearch("");
     setIsAdmin("");
     setHasQR("");
     setJob("");
     setProduct("");
-    setPhoneExists("");
     setPlan("");
     setCreatedFrom("");
     setCreatedTo("");
@@ -149,7 +165,6 @@ export default function AdminUsersPage() {
       hasQR: undefined,
       job: undefined,
       product: undefined,
-      phoneExists: undefined,
       plan: undefined,
       createdFrom: undefined,
       createdTo: undefined,
@@ -346,15 +361,6 @@ export default function AdminUsersPage() {
             </div>
 
             <div>
-              <label className="block text-sm mb-1">Phone exists</label>
-              <select value={phoneExists} onChange={(e) => setPhoneExists(e.target.value)} className="w-full border rounded px-2 py-1">
-                <option value="">Any</option>
-                <option value="true">Has phone</option>
-                <option value="false">No phone</option>
-              </select>
-            </div>
-
-            <div>
               <label className="block text-sm mb-1">Created From</label>
               <input type="date" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} className="w-full border rounded px-2 py-1" />
             </div>
@@ -377,7 +383,6 @@ export default function AdminUsersPage() {
             </div>
 
             <div className="flex gap-2 mt-3">
-              <button onClick={applyFilters} className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Apply</button>
               <button onClick={clearFilters} className="flex-1 px-3 py-2 border rounded">Clear</button>
             </div>
 

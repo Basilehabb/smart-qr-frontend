@@ -10,6 +10,7 @@ export default function AdminSidebar() {
     { title: "Dashboard", path: "/admin/dashboard", icon: "📊" },
     { title: "Plans", path: "/admin/plans", icon: "🧾" },
     { title: "Users", path: "/admin/users", icon: "👥" },
+    { title: "WhatsApp Marketing", path: "/admin/marketing", icon: "💬" },
     { title: "Bulk Upload", path: "/admin/users/bulk-upload", icon: "📤" },
     { title: "Bulk Avatars", path: "/admin/users/bulk-upload-avatars", icon: "🖼️" },
     { title: "QR Codes", path: "/admin/qrs", icon: "📱" },
