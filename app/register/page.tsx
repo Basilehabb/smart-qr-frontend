@@ -137,7 +137,6 @@ function RegisterForm() {
   const blockedSections = plan?.features.blockedSections || [];
   const rawMaxLinks = plan?.features.maxLinks;
   const maxLinks = typeof rawMaxLinks === "number" ? rawMaxLinks : null;
-  const canEditProfile = plan?.features.canEditProfile !== false;
   const linkCount = Object.values(profile).reduce(
     (total, section) => total + Object.values(section).filter((value) => String(value).trim() !== "").length,
     0
@@ -148,7 +147,7 @@ function RegisterForm() {
   }
 
   function canAddMoreLinks() {
-    return Boolean(plan) && canEditProfile && (maxLinks === null || linkCount < maxLinks);
+    return Boolean(plan) && (maxLinks === null || linkCount < maxLinks);
   }
 
   function isBlockedSection(section: keyof ProfileSections) {
@@ -162,12 +161,11 @@ function RegisterForm() {
 
   function isPlatformAllowed(platform: Platform) {
     const category = (platform.category || "other") as keyof ProfileSections;
-    return canEditProfile && !isBlockedSection(category) && (allowsDuplicateType() || !hasPlatformType(platform.id));
+    return !isBlockedSection(category) && (allowsDuplicateType() || !hasPlatformType(platform.id));
   }
 
   function planLimitMessage() {
     if (!plan) return "Could not load the current plan. Please refresh and try again.";
-    if (!canEditProfile && linkCount > 0) return "Your current plan does not include profile editing.";
     if (maxLinks !== null && linkCount > maxLinks) return "You reached your plan limit. Upgrade to add more links.";
     if (!allowsDuplicateType()) {
       const counts = new Map<string, number>();
@@ -189,7 +187,6 @@ function RegisterForm() {
 
   function addLinkLimitMessage() {
     if (!plan) return "Could not load the current plan. Please refresh and try again.";
-    if (!canEditProfile) return "Your current plan does not include profile editing.";
     if (maxLinks !== null && linkCount >= maxLinks) return "You reached your plan limit. Upgrade to add more links.";
     return planLimitMessage() || "This link is not included in your current plan.";
   }
@@ -457,7 +454,7 @@ function RegisterForm() {
                   key={section.key}
                   type="button"
                   onClick={() => setActiveTab(section.key)}
-                  disabled={planLoading || !canEditProfile || isBlockedSection(section.key)}
+                  disabled={planLoading || isBlockedSection(section.key)}
                   className={`px-3 py-2 rounded-t ${
                     activeTab === section.key
                       ? "bg-white border-l border-r border-t -mb-px text-indigo-600"
