@@ -6,6 +6,13 @@ import { useRouter } from "next/navigation";
 import AdminSidebar from "../AdminSidebar";
 import qs from "qs";
 
+type Plan = {
+  id: string;
+  key: string;
+  name: string;
+  isActive: boolean;
+};
+
 function buildQueryFromURL() {
   if (typeof window === "undefined") return {};
   return Object.fromEntries(new URLSearchParams(window.location.search));
@@ -15,6 +22,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
 
   const [users, setUsers] = useState<any[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
 
   // filters state (keeps in sync with URL)
@@ -23,6 +31,7 @@ export default function AdminUsersPage() {
   const [hasQR, setHasQR] = useState<string>("");
   const [job, setJob] = useState("");
   const [phoneExists, setPhoneExists] = useState<string>("");
+  const [plan, setPlan] = useState("");
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
   const [sort, setSort] = useState("newest");
@@ -39,6 +48,7 @@ export default function AdminUsersPage() {
     if (q.hasQR) setHasQR(String(q.hasQR));
     if (q.job) setJob(String(q.job));
     if (q.phoneExists) setPhoneExists(String(q.phoneExists));
+    if (q.plan) setPlan(String(q.plan));
     if (q.createdFrom) setCreatedFrom(String(q.createdFrom));
     if (q.createdTo) setCreatedTo(String(q.createdTo));
     if (q.sort) setSort(String(q.sort));
@@ -46,6 +56,10 @@ export default function AdminUsersPage() {
     if (q.limit) setLimit(Number(q.limit));
   
     fetchUsers(q);
+    const token = localStorage.getItem("admin-token");
+    api.get("/admin/plans", { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => setPlans(response.data.plans || []))
+      .catch((error) => console.error("fetch plans error:", error));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -56,12 +70,13 @@ export default function AdminUsersPage() {
     hasQR: hasQR || undefined,
     job: job || undefined,
     phoneExists: phoneExists || undefined,
+    plan: plan || undefined,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
     sort: sort || undefined,
     page: page || 1,
     limit: limit || 20,
-  }), [search, isAdmin, hasQR, job, phoneExists, createdFrom, createdTo, sort, page, limit]);
+  }), [search, isAdmin, hasQR, job, phoneExists, plan, createdFrom, createdTo, sort, page, limit]);
 
   // Fetch users with current query and update URL
   async function fetchUsers(overrides?: any) {
@@ -106,12 +121,25 @@ export default function AdminUsersPage() {
     setHasQR("");
     setJob("");
     setPhoneExists("");
+    setPlan("");
     setCreatedFrom("");
     setCreatedTo("");
     setSort("newest");
     setPage(1);
     setLimit(20);
-    fetchUsers({});
+    fetchUsers({
+      search: undefined,
+      isAdmin: undefined,
+      hasQR: undefined,
+      job: undefined,
+      phoneExists: undefined,
+      plan: undefined,
+      createdFrom: undefined,
+      createdTo: undefined,
+      sort: "newest",
+      page: 1,
+      limit: 20,
+    });
   }
 
   // delete user
@@ -175,6 +203,7 @@ export default function AdminUsersPage() {
                   <tr className="border-b text-sm text-gray-600">
                     <th className="p-3">Name</th>
                     <th>Phone</th>
+                    <th>Plan</th>
                     <th>QRs</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
@@ -188,6 +217,7 @@ export default function AdminUsersPage() {
                     >
                       <td className="p-3">{user.name}</td>
                       <td>{user.phone || user.email || "-"}</td>
+                      <td>{user.plan?.name || "-"}</td>
 
                       <td>{user.qrCount ?? 0}</td>
 
@@ -249,6 +279,16 @@ export default function AdminUsersPage() {
             <div>
               <label className="block text-sm mb-1">Job (contains)</label>
               <input value={job} onChange={(e) => setJob(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Plan</label>
+              <select value={plan} onChange={(e) => setPlan(e.target.value)} className="w-full border rounded px-2 py-1">
+                <option value="">Any</option>
+                {plans.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
             </div>
 
             <div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import { UpgradeModalHost } from "@/components/UpgradeModal";
 
 // ✅ استبدال Geist بخط Inter
 const inter = Inter({
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
         {children}
+        <UpgradeModalHost />
       </body>
     </html>
   );

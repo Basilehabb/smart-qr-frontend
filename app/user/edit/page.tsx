@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api"; // your axios/fetch wrapper
 import { ExternalLink } from "lucide-react";
+import UpgradeModal from "@/components/UpgradeModal";
 import {
   PLATFORM_DEFINITIONS,
   getBasePlatformId,
@@ -18,6 +19,18 @@ type Platform = {
   requires?: "phone" | "url" | "text" | null;
   template?: string | null;
   icon?: string | null;
+};
+
+type Plan = {
+  key: string;
+  name: string;
+  features: {
+    canEditProfile?: boolean;
+    maxLinks?: number | null;
+    allowDuplicateType?: boolean;
+    blockedSections?: string[];
+    showLolyLogo?: boolean;
+  };
 };
 
 type ProfileSections = {
@@ -52,6 +65,7 @@ export default function EditProfilePage() {
 
   // basic user info
   const [user, setUser] = useState<any | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -116,6 +130,7 @@ export default function EditProfilePage() {
         const res = await api.get("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
         const u = res.data.user;
         setUser(u);
+        setPlan(u.plan || null);
         setName(u.name || "");
         setEmail(u.email || "");
         setPhone(u.phone || "");
@@ -205,6 +220,18 @@ export default function EditProfilePage() {
     if (!platform) return;
 
     const category = (platform.category || "other") as keyof ProfileSections;
+    if (!canAddMoreLinks()) {
+      setError("You reached your plan limit. Upgrade to add more links.");
+      return;
+    }
+    if (isBlockedSection(category)) {
+      setError("This section is not included in your plan.");
+      return;
+    }
+    if (!allowsDuplicateType() && hasPlatformType(platform.id)) {
+      setError("Your plan allows one link for each platform type.");
+      return;
+    }
     const entryKey = getNextPlatformKey(platform.id, (profile as any)[category] || {});
     const value = generateLink(platform, rawValue);
 
@@ -422,8 +449,39 @@ async function saveProfile() {
 
   // search helper
   const filteredPlatforms = platforms.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  const blockedSections = plan?.features.blockedSections || [];
+  const maxLinks = typeof plan?.features.maxLinks === "number" ? plan.features.maxLinks : null;
+  const linkCount = Object.values(profile).reduce(
+    (total, section) => total + Object.values(section).filter((value) => value !== null && String(value).trim() !== "").length,
+    0
+  );
+  const allowsDuplicateType = () => plan?.features.allowDuplicateType !== false;
+  const canAddMoreLinks = () => maxLinks === null || linkCount < maxLinks;
+  const isBlockedSection = (section: keyof ProfileSections) => blockedSections.includes(section);
+  const hasPlatformType = (platformId: string) => {
+    const basePlatformId = getBasePlatformId(platformId);
+    return Object.values(profile).some((section) =>
+      Object.entries(section).some(
+        ([key, value]) => value !== null && getBasePlatformId(key) === basePlatformId
+      )
+    );
+  };
+  const isPlatformAllowed = (platform: Platform) => {
+    const category = (platform.category || "other") as keyof ProfileSections;
+    return !isBlockedSection(category) && (allowsDuplicateType() || !hasPlatformType(platform.id));
+  };
+
+  useEffect(() => {
+    if (!blockedSections.includes(activeTab)) return;
+    const firstAllowedSection = sections.find((section) => !blockedSections.includes(section.key));
+    if (firstAllowedSection) setActiveTab(firstAllowedSection.key);
+  }, [activeTab, plan]);
 
   if (loading) return <div className="p-6">Loading…</div>;
+
+  if (plan?.features.canEditProfile === false) {
+    return <UpgradeModal feature="canEditProfile" onClose={() => window.history.back()} />;
+  }
 
   return (
     <div className="min-h-screen p-6 bg-slate-50">
@@ -540,7 +598,8 @@ async function saveProfile() {
                 <button
                   key={s.key}
                   onClick={() => setActiveTab(s.key)}
-                  className={`px-3 py-2 rounded-t ${activeTab === s.key ? "bg-white border-l border-r border-t -mb-px text-indigo-600" : "text-gray-600"}`}
+                  disabled={isBlockedSection(s.key)}
+                  className={`px-3 py-2 rounded-t disabled:cursor-not-allowed disabled:opacity-40 ${activeTab === s.key ? "bg-white border-l border-r border-t -mb-px text-indigo-600" : "text-gray-600"}`}
                 >
                   {s.title}
                 </button>
@@ -656,9 +715,18 @@ async function saveProfile() {
 
             {/* Buttons */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
-              <button onClick={() => setShowAddDialog(true)} className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto">
-                + Add Link
-              </button>
+              <div className="w-full md:w-auto">
+                <button
+                  onClick={() => setShowAddDialog(true)}
+                  disabled={!canAddMoreLinks()}
+                  className="px-4 py-2 bg-purple-600 text-white rounded w-full md:w-auto disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  + Add Link
+                </button>
+                {!canAddMoreLinks() && (
+                  <p className="mt-2 text-sm text-amber-700">You reached your plan limit. Upgrade to add more links.</p>
+                )}
+              </div>
 
               <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                 <button onClick={() => (window.location.href = "/")} className="px-4 py-2 border rounded w-full md:w-auto">
@@ -696,12 +764,13 @@ async function saveProfile() {
                       {list.slice(0, 20).map((p) => (
                         <button
                           key={p.id}
+                          disabled={!canAddMoreLinks() || !isPlatformAllowed(p)}
                           onClick={() => {
                             setSelectedPlatform(p.id);
                             setSelectedValue("");
                             setShowAddDialog(true);
                           }}
-                          className="px-3 py-1 border rounded text-sm bg-purple-50"
+                          className="px-3 py-1 border rounded text-sm bg-purple-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {p.title}
                         </button>
@@ -725,7 +794,7 @@ async function saveProfile() {
                 <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)} className="w-full border rounded px-3 py-2">
                   <option value="">Choose platform</option>
                   {platforms.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.id} value={p.id} disabled={!isPlatformAllowed(p)}>
                       {p.title}
                     </option>
                   ))}
@@ -746,6 +815,8 @@ async function saveProfile() {
                     if (!selectedPlatform) return alert("Choose platform");
                     const plat = platforms.find((p) => p.id === selectedPlatform);
                     if (!plat) return alert("Invalid platform");
+                    if (!canAddMoreLinks()) return setError("You reached your plan limit. Upgrade to add more links.");
+                    if (!isPlatformAllowed(plat)) return setError("This link is not included in your plan.");
                     if (plat.requires === "phone" && !isPhone(selectedValue) && !isPhone(digitsOnly(selectedValue))) {
                       return alert("Please provide a valid phone number");
                     }

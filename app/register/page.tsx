@@ -2,8 +2,8 @@
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
 import { ExternalLink } from "lucide-react";
+import { api } from "@/lib/api";
 import {
   PLATFORM_DEFINITIONS,
   getBasePlatformId,
@@ -11,8 +11,6 @@ import {
   getProfileEntryTitle,
   normalizeLink,
 } from "@/lib/normalizeLink";
-
-const API = process.env.NEXT_PUBLIC_API_URL;
 
 type Platform = {
   id: string;
@@ -144,7 +142,7 @@ function RegisterForm() {
     const uploadData = new FormData();
     uploadData.append("file", avatarFile);
 
-    await axios.post(`${API}/auth/upload-avatar`, uploadData, {
+    await api.post("/auth/upload-avatar", uploadData, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
@@ -170,22 +168,22 @@ function RegisterForm() {
     setError("");
 
     try {
-      await axios.post(`${API}/auth/register`, {
+      await api.post("/auth/register", {
         name: formData.name,
         phone: formData.phone,
         password: formData.password,
         job: formData.job,
       });
 
-      const loginRes = await axios.post(`${API}/auth/login`, {
+      const loginRes = await api.post("/auth/login", {
         phone: formData.phone,
         password: formData.password,
       });
 
       const token = loginRes.data.token;
 
-      await axios.put(
-        `${API}/auth/update`,
+      await api.put(
+        "/auth/update",
         { profile: buildNormalizedProfile() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -193,8 +191,8 @@ function RegisterForm() {
       await uploadAvatar(token);
 
       if (!isAdminFlow && code) {
-        await axios.post(
-          `${API}/qr/link`,
+        await api.post(
+          "/qr/link",
           { code },
           { headers: { Authorization: `Bearer ${token}` } }
         );

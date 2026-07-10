@@ -22,6 +22,13 @@ type Platform = {
   icon?: string | null;
 };
 
+type SubscriptionPlan = {
+  id: string;
+  name: string;
+  key: string;
+  isActive: boolean;
+};
+
 type ProfileSections = {
   social: Record<string, string | null>;
   contact: Record<string, string | null>;
@@ -52,6 +59,9 @@ export default function UserDetailsPage() {
   const [user, setUser] = useState<any>(null);
   const [qrs, setQrs] = useState<any[]>([]);
   const [allQrs, setAllQrs] = useState<any[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [updatingPlan, setUpdatingPlan] = useState(false);
   const [loading, setLoading] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -113,6 +123,16 @@ export default function UserDetailsPage() {
         if (!foundUser) return router.push("/admin/users");
 
         setUser(foundUser);
+        setSelectedPlanId(foundUser.plan?.id || "");
+
+        try {
+          const plansRes = await api.get("/admin/plans", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setPlans(plansRes.data.plans || []);
+        } catch (error) {
+          console.error("Could not load subscription plans", error);
+        }
 
         setEditData({
           name: foundUser.name || "",
@@ -377,6 +397,28 @@ export default function UserDetailsPage() {
     }
   };
 
+  const updatePlan = async () => {
+    if (!selectedPlanId || selectedPlanId === user?.plan?.id) return;
+    const token = localStorage.getItem("admin-token");
+    setUpdatingPlan(true);
+    try {
+      const response = await api.put(
+        `/admin/users/${userId}/plan`,
+        { planId: selectedPlanId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUser(response.data.user);
+      setSelectedPlanId(response.data.user.plan?.id || selectedPlanId);
+      alert("Plan updated successfully");
+    } catch (error: any) {
+      console.error("Plan update error:", error);
+      alert(error?.response?.data?.message || "Failed to update plan");
+      setSelectedPlanId(user?.plan?.id || "");
+    } finally {
+      setUpdatingPlan(false);
+    }
+  };
+
   const createQRForUser = async () => {
     const token = localStorage.getItem("admin-token");
     const res = await api.post(
@@ -463,6 +505,31 @@ export default function UserDetailsPage() {
                 {user.email && <p><b>Public Email:</b> {user.email}</p>}
                 {user.phone && <p><b>Login Phone:</b> {user.phone}</p>}
                 {user.job && <p><b>Job:</b> {user.job}</p>}
+
+                <div className="mt-4 max-w-md">
+                  <label className="mb-1 block text-sm font-medium">Subscription plan</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedPlanId}
+                      onChange={(event) => setSelectedPlanId(event.target.value)}
+                      className="w-full rounded border px-3 py-2"
+                    >
+                      <option value="">Select plan</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.id} disabled={!plan.isActive && plan.id !== user.plan?.id}>
+                          {plan.name} ({plan.key})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={updatePlan}
+                      disabled={updatingPlan || !selectedPlanId || selectedPlanId === user.plan?.id}
+                      className="rounded bg-indigo-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {updatingPlan ? "Saving..." : "Update"}
+                    </button>
+                  </div>
+                </div>
 
                 <button className="mt-3 px-4 py-2 bg-purple-600 text-white rounded" onClick={resetPassword}>
                   Reset Password
