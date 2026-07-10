@@ -32,6 +32,10 @@ type RegistrationPlan = {
   };
 };
 
+type CreatedAccount = {
+  token: string;
+};
+
 type ProfileSections = {
   social: Record<string, string>;
   contact: Record<string, string>;
@@ -93,6 +97,7 @@ function RegisterForm() {
   const [plan, setPlan] = useState<RegistrationPlan | null>(null);
   const [planLoading, setPlanLoading] = useState(true);
   const [planError, setPlanError] = useState("");
+  const [createdAccount, setCreatedAccount] = useState<CreatedAccount | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -247,9 +252,35 @@ function RegisterForm() {
     const uploadData = new FormData();
     uploadData.append("file", avatarFile);
 
-    await api.post("/auth/upload-avatar", uploadData, {
-      headers: { Authorization: `Bearer ${token}` },
+    return api.post("/auth/upload-avatar", uploadData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": undefined,
+      },
     });
+  }
+
+  function continueAfterRegistration() {
+    if (!isAdminFlow && code) {
+      router.push(`/qr/${code}`);
+      return;
+    }
+    router.push(isAdminFlow ? "/admin/users" : "/");
+  }
+
+  async function retryAvatarUpload() {
+    if (!createdAccount || !avatarFile) return;
+    setLoading(true);
+    try {
+      await uploadAvatar(createdAccount.token);
+      setError("");
+      continueAfterRegistration();
+    } catch (avatarError) {
+      console.error("Avatar retry failed", avatarError);
+      setError("Your account was created, but the photo upload failed. Please try the photo again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function buildNormalizedProfile() {
@@ -296,18 +327,17 @@ function RegisterForm() {
 
       const token = registration.data.token;
       localStorage.setItem("user-token", token);
-      try {
-        await uploadAvatar(token);
-      } catch (avatarError) {
-        console.error("Avatar upload failed after account creation", avatarError);
+      setCreatedAccount({ token });
+      if (avatarFile) {
+        try {
+          await uploadAvatar(token);
+        } catch (avatarError) {
+          console.error("Avatar upload failed after account creation", avatarError);
+          setError("Your account and QR were created, but the photo upload failed. Please retry the photo upload below.");
+          return;
+        }
       }
-
-      if (!isAdminFlow && code) {
-        router.push(`/qr/${code}`);
-        return;
-      }
-
-      router.push(isAdminFlow ? "/admin/users" : "/");
+      continueAfterRegistration();
     } catch (err: any) {
       console.error(err);
       const response = err.response?.data;
@@ -539,7 +569,16 @@ function RegisterForm() {
                 {maxLinks !== null ? ` It includes up to ${maxLinks} links.` : " It includes unlimited links."}
               </div>
             ) : null}
-            {error ? <div className="text-red-600">{error}</div> : null}
+            {error ? (
+              <div className="text-red-600">
+                <p>{error}</p>
+                {createdAccount && avatarFile ? (
+                  <button type="button" onClick={retryAvatarUpload} disabled={loading} className="mt-2 rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">
+                    Retry photo upload
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-3 mt-4">
               <div className="w-full md:w-auto">
@@ -567,10 +606,10 @@ function RegisterForm() {
 
                 <button
                   type="submit"
-                  disabled={loading || planLoading || !plan}
+                  disabled={loading || planLoading || !plan || Boolean(createdAccount)}
                   className="px-4 py-2 bg-green-600 text-white rounded w-full md:w-auto disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {loading ? "Creating..." : "Create"}
+                  {loading ? "Creating..." : createdAccount ? "Account created" : "Create"}
                 </button>
               </div>
             </div>
