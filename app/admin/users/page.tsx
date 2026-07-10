@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { getAdminTokenOrRedirect, handleAdminAuthError } from "@/lib/adminSession";
 import AdminSidebar from "../AdminSidebar";
 import qs from "qs";
 
@@ -24,12 +25,14 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // filters state (keeps in sync with URL)
   const [search, setSearch] = useState("");
   const [isAdmin, setIsAdmin] = useState<string>(""); // "" | "true" | "false"
   const [hasQR, setHasQR] = useState<string>("");
   const [job, setJob] = useState("");
+  const [product, setProduct] = useState("");
   const [phoneExists, setPhoneExists] = useState<string>("");
   const [plan, setPlan] = useState("");
   const [createdFrom, setCreatedFrom] = useState("");
@@ -47,6 +50,7 @@ export default function AdminUsersPage() {
     if (q.isAdmin) setIsAdmin(String(q.isAdmin));
     if (q.hasQR) setHasQR(String(q.hasQR));
     if (q.job) setJob(String(q.job));
+    if (q.product) setProduct(String(q.product));
     if (q.phoneExists) setPhoneExists(String(q.phoneExists));
     if (q.plan) setPlan(String(q.plan));
     if (q.createdFrom) setCreatedFrom(String(q.createdFrom));
@@ -69,6 +73,7 @@ export default function AdminUsersPage() {
     isAdmin: isAdmin || undefined,
     hasQR: hasQR || undefined,
     job: job || undefined,
+    product: product || undefined,
     phoneExists: phoneExists || undefined,
     plan: plan || undefined,
     createdFrom: createdFrom || undefined,
@@ -76,7 +81,7 @@ export default function AdminUsersPage() {
     sort: sort || undefined,
     page: page || 1,
     limit: limit || 20,
-  }), [search, isAdmin, hasQR, job, phoneExists, plan, createdFrom, createdTo, sort, page, limit]);
+  }), [search, isAdmin, hasQR, job, product, phoneExists, plan, createdFrom, createdTo, sort, page, limit]);
 
   // Fetch users with current query and update URL
   async function fetchUsers(overrides?: any) {
@@ -88,7 +93,12 @@ export default function AdminUsersPage() {
 
       const queryString = qs.stringify(q, { addQueryPrefix: true, arrayFormat: "brackets" });
 
-      const token = localStorage.getItem("admin-token");
+      const token = getAdminTokenOrRedirect(router);
+      if (!token) {
+        setIsRedirecting(true);
+        return;
+      }
+
       const res = await api.get(`/admin/users${queryString}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -102,6 +112,11 @@ export default function AdminUsersPage() {
       }
 
     } catch (e) {
+      if (handleAdminAuthError(e, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
       console.error("fetch users error:", e);
     } finally {
       setLoading(false);
@@ -120,6 +135,7 @@ export default function AdminUsersPage() {
     setIsAdmin("");
     setHasQR("");
     setJob("");
+    setProduct("");
     setPhoneExists("");
     setPlan("");
     setCreatedFrom("");
@@ -132,6 +148,7 @@ export default function AdminUsersPage() {
       isAdmin: undefined,
       hasQR: undefined,
       job: undefined,
+      product: undefined,
       phoneExists: undefined,
       plan: undefined,
       createdFrom: undefined,
@@ -146,16 +163,29 @@ export default function AdminUsersPage() {
   const deleteUser = async (userId: string) => {
     if (!confirm("هل تريد حذف هذا المستخدم؟")) return;
 
-    const token = localStorage.getItem("admin-token");
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
 
-    await api.delete(`/admin/users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      await api.delete(`/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    fetchUsers();
+      fetchUsers();
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to delete user");
+    }
   };
 
-  if (loading) return <p className="text-center mt-20">Loading...</p>;
+  if (loading || isRedirecting) return <p className="text-center mt-20">Loading...</p>;
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -204,6 +234,7 @@ export default function AdminUsersPage() {
                     <th className="p-3">Name</th>
                     <th>Phone</th>
                     <th>Plan</th>
+                    <th>Products</th>
                     <th>QRs</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
@@ -218,6 +249,19 @@ export default function AdminUsersPage() {
                       <td className="p-3">{user.name}</td>
                       <td>{user.phone || user.email || "-"}</td>
                       <td>{user.plan?.name || "-"}</td>
+                      <td>
+                        {Array.isArray(user.purchasedProducts) && user.purchasedProducts.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {user.purchasedProducts.map((item: string) => (
+                              <span key={item} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 border border-amber-100">
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
 
                       <td>{user.qrCount ?? 0}</td>
 
@@ -279,6 +323,16 @@ export default function AdminUsersPage() {
             <div>
               <label className="block text-sm mb-1">Job (contains)</label>
               <input value={job} onChange={(e) => setJob(e.target.value)} className="w-full border rounded px-2 py-1" />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">Purchased product</label>
+              <input
+                value={product}
+                onChange={(e) => setProduct(e.target.value)}
+                className="w-full border rounded px-2 py-1"
+                placeholder="Search by product name"
+              />
             </div>
 
             <div>

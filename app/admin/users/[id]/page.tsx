@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { getAdminTokenOrRedirect, handleAdminAuthError } from "@/lib/adminSession";
 import AdminSidebar from "../../AdminSidebar";
 import { ExternalLink } from "lucide-react";
 import {
@@ -63,6 +64,7 @@ export default function UserDetailsPage() {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [updatingPlan, setUpdatingPlan] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -73,7 +75,9 @@ export default function UserDetailsPage() {
     phone: "",
     job: "",
     avatar: "",
+    purchasedProducts: [] as string[],
   });
+  const [newProduct, setNewProduct] = useState("");
 
   // Profile editing
   const [profile, setProfile] = useState<ProfileSections>(EMPTY_PROFILE);
@@ -101,8 +105,11 @@ export default function UserDetailsPage() {
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem("admin-token");
-    if (!token) return router.push("/login");
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
 
     (async () => {
       try {
@@ -140,6 +147,7 @@ export default function UserDetailsPage() {
           phone: foundUser.phone || "",
           job: foundUser.job || "",
           avatar: foundUser.avatar || "",
+          purchasedProducts: Array.isArray(foundUser.purchasedProducts) ? foundUser.purchasedProducts : [],
         });
 
         // Load profile with better normalization
@@ -205,7 +213,12 @@ export default function UserDetailsPage() {
 
         setAllQrs(qrRes.data);
         setQrs(qrRes.data.filter((qr: any) => qr.userId?._id === userId));
-      } catch {
+      } catch (error) {
+        if (handleAdminAuthError(error, router)) {
+          setIsRedirecting(true);
+          return;
+        }
+
         router.push("/admin/dashboard");
       } finally {
         setLoading(false);
@@ -341,7 +354,11 @@ export default function UserDetailsPage() {
   const filteredPlatforms = platforms.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const saveUser = async () => {
-    const token = localStorage.getItem("admin-token");
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
 
     if (!isEmail(editData.email)) {
       return alert("Invalid email");
@@ -392,6 +409,11 @@ export default function UserDetailsPage() {
       window.location.reload();
       
     } catch (error: any) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
       console.error("Save error:", error);
       alert(error?.response?.data?.message || "Failed to save user");
     }
@@ -399,7 +421,12 @@ export default function UserDetailsPage() {
 
   const updatePlan = async () => {
     if (!selectedPlanId || selectedPlanId === user?.plan?.id) return;
-    const token = localStorage.getItem("admin-token");
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
     setUpdatingPlan(true);
     try {
       const response = await api.put(
@@ -411,6 +438,11 @@ export default function UserDetailsPage() {
       setSelectedPlanId(response.data.user.plan?.id || selectedPlanId);
       alert("Plan updated successfully");
     } catch (error: any) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
       console.error("Plan update error:", error);
       alert(error?.response?.data?.message || "Failed to update plan");
       setSelectedPlanId(user?.plan?.id || "");
@@ -420,58 +452,128 @@ export default function UserDetailsPage() {
   };
 
   const createQRForUser = async () => {
-    const token = localStorage.getItem("admin-token");
-    const res = await api.post(
-      `/admin/users/${userId}/qrs`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    alert("QR Created & Linked: " + res.data.qr.code);
-    router.refresh();
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
+    try {
+      const res = await api.post(
+        `/admin/users/${userId}/qrs`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("QR Created & Linked: " + res.data.qr.code);
+      router.refresh();
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to create QR");
+    }
   };
 
   const linkExistingQR = async () => {
     if (!selectedQR) return alert("Select a QR");
-    const token = localStorage.getItem("admin-token");
-    await api.patch(
-      `/admin/users/${userId}/qrs/link`,
-      { code: selectedQR },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    alert("QR Linked!");
-    router.refresh();
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
+    try {
+      await api.patch(
+        `/admin/users/${userId}/qrs/link`,
+        { code: selectedQR },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("QR Linked!");
+      router.refresh();
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to link QR");
+    }
   };
 
   const unlinkQR = async (code: string) => {
-    const token = localStorage.getItem("admin-token");
-    await api.patch(`/admin/qrs/${code}/unlink`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    alert("QR Unlinked");
-    router.refresh();
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
+    try {
+      await api.patch(`/admin/qrs/${code}/unlink`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("QR Unlinked");
+      router.refresh();
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to unlink QR");
+    }
   };
 
   const deleteUser = async () => {
     if (!confirm("Are you sure?")) return;
-    const token = localStorage.getItem("admin-token");
-    await api.delete(`/admin/users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    alert("User deleted");
-    router.push("/admin/users");
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("User deleted");
+      router.push("/admin/users");
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to delete user");
+    }
   };
 
   const resetPassword = async () => {
-    const token = localStorage.getItem("admin-token");
-    const res = await api.post(
-      `/admin/users/${userId}/reset-password`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    alert("Temporary Password: " + res.data.tempPassword);
+    const token = getAdminTokenOrRedirect(router);
+    if (!token) {
+      setIsRedirecting(true);
+      return;
+    }
+
+    try {
+      const res = await api.post(
+        `/admin/users/${userId}/reset-password`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Temporary Password: " + res.data.tempPassword);
+    } catch (error) {
+      if (handleAdminAuthError(error, router)) {
+        setIsRedirecting(true);
+        return;
+      }
+
+      alert("Failed to reset password");
+    }
   };
 
-  if (loading) return <p className="text-center mt-20">Loading user...</p>;
+  if (loading || isRedirecting) return <p className="text-center mt-20">Loading user...</p>;
   if (!user) return <p className="text-center text-red-600 mt-20">User not found</p>;
 
   return (
@@ -505,6 +607,20 @@ export default function UserDetailsPage() {
                 {user.email && <p><b>Public Email:</b> {user.email}</p>}
                 {user.phone && <p><b>Login Phone:</b> {user.phone}</p>}
                 {user.job && <p><b>Job:</b> {user.job}</p>}
+                <div className="mt-2">
+                  <b>Purchased Products:</b>{" "}
+                  {Array.isArray(user.purchasedProducts) && user.purchasedProducts.length > 0 ? (
+                    <span className="inline-flex flex-wrap gap-2 align-middle">
+                      {user.purchasedProducts.map((item: string) => (
+                        <span key={item} className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 border border-amber-100">
+                          {item}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
 
                 <div className="mt-4 max-w-md">
                   <label className="mb-1 block text-sm font-medium">Subscription plan</label>
@@ -574,6 +690,56 @@ export default function UserDetailsPage() {
                     value={editData.job}
                     onChange={(e) => setEditData({ ...editData, job: e.target.value })}
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm mb-1">Purchased Products</label>
+                  <div className="flex gap-2">
+                    <input
+                      className="border px-3 py-2 rounded w-full"
+                      value={newProduct}
+                      onChange={(e) => setNewProduct(e.target.value)}
+                      placeholder="Product name"
+                    />
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-amber-600 text-white rounded"
+                      onClick={() => {
+                        const product = newProduct.trim();
+                        if (!product) return;
+                        setEditData((prev) => ({
+                          ...prev,
+                          purchasedProducts: Array.from(new Set([...(prev.purchasedProducts || []), product])),
+                        }));
+                        setNewProduct("");
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {editData.purchasedProducts.length === 0 && (
+                      <span className="text-sm text-gray-500">No products added.</span>
+                    )}
+                    {editData.purchasedProducts.map((item) => (
+                      <span key={item} className="inline-flex items-center gap-2 rounded bg-amber-50 px-3 py-1 text-sm text-amber-800 border border-amber-100">
+                        {item}
+                        <button
+                          type="button"
+                          className="text-amber-900 hover:text-red-600"
+                          onClick={() =>
+                            setEditData((prev) => ({
+                              ...prev,
+                              purchasedProducts: prev.purchasedProducts.filter((product) => product !== item),
+                            }))
+                          }
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="col-span-2 space-y-3">
